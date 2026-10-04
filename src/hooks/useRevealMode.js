@@ -7,6 +7,8 @@ function useRevealMode(totalCount) {
   const [intervalSeconds, setIntervalSeconds] = useState(3)
   const [revealedCount, setRevealedCount] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  // Bumped on manual reveals so the running timer restarts its full interval.
+  const [timerKey, setTimerKey] = useState(0)
 
   const visibleCount = enabled ? Math.min(revealedCount, totalCount) : totalCount
   const isComplete = visibleCount >= totalCount
@@ -19,7 +21,7 @@ function useRevealMode(totalCount) {
       intervalSeconds * 1000,
     )
     return () => clearInterval(timer)
-  }, [isRunning, intervalSeconds])
+  }, [isRunning, intervalSeconds, timerKey])
 
   // The initial reveal-mode state: first video visible, timer paused.
   function restoreInitial() {
@@ -41,6 +43,17 @@ function useRevealMode(totalCount) {
     setIsPlaying(false)
   }
 
+  function toggle() {
+    if (isRunning) pause()
+    else start()
+  }
+
+  function revealNext() {
+    if (!enabled || isComplete) return
+    setRevealedCount(visibleCount + 1)
+    setTimerKey((key) => key + 1)
+  }
+
   function reset() {
     setRevealedCount(0)
     setIsPlaying(false)
@@ -57,6 +70,8 @@ function useRevealMode(totalCount) {
     setIntervalSeconds,
     start,
     pause,
+    toggle,
+    revealNext,
     reset,
     restoreInitial,
   }

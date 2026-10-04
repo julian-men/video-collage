@@ -74,6 +74,10 @@ function ControlPanel({
         {videoCount} video{videoCount === 1 ? '' : 's'}
         {hasBackground ? ' · background set' : ''}
       </p>
+
+      <p className="control-panel__status">
+        Press <kbd>?</kbd> for keyboard shortcuts
+      </p>
     </aside>
   )
 }

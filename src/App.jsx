@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import ControlPanel from './components/ControlPanel.jsx'
+import ShortcutHelp from './components/ShortcutHelp.jsx'
 import Workspace from './components/Workspace.jsx'
+import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
 import './App.css'
@@ -38,6 +40,7 @@ function createVideoItem(file) {
 function App() {
   const [videos, setVideos] = useState([])
   const [background, setBackground] = useState(null)
+  const [isHelpOpen, setIsHelpOpen] = useState(false)
 
   const appRef = useRef(null)
   const presentation = usePresentationMode(appRef)
@@ -102,6 +105,34 @@ function App() {
     reveal.restoreInitial()
   }
 
+  function handleRevealNext() {
+    if (!reveal.enabled) return false
+    reveal.revealNext()
+  }
+
+  // Escape is owned by usePresentationMode; here it only closes the help.
+  useKeyboardShortcuts({
+    ' ': () => {
+      if (!reveal.enabled) return false
+      reveal.toggle()
+    },
+    arrowright: handleRevealNext,
+    n: handleRevealNext,
+    r: () => {
+      if (!reveal.enabled) return false
+      reveal.reset()
+    },
+    l: () => {
+      if (videos.length === 0) return false
+      handleRandomizeLayout()
+    },
+    '?': () => setIsHelpOpen((open) => !open),
+    escape: () => {
+      setIsHelpOpen(false)
+      return false
+    },
+  })
+
   return (
     <div className="app" ref={appRef}>
       <Workspace
@@ -131,6 +162,7 @@ function App() {
           onClearAll={handleClearAll}
         />
       )}
+      {isHelpOpen && <ShortcutHelp onClose={() => setIsHelpOpen(false)} />}
     </div>
   )
 }
