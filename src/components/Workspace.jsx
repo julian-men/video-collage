@@ -27,14 +27,24 @@ function getTileRect(video, workspace) {
     Math.min(video.width, workspace.width, workspace.height * video.aspectRatio),
   )
   const height = width / video.aspectRatio
+  const maxLeft = Math.max(0, workspace.width - width)
+  const maxTop = Math.max(0, workspace.height - height)
   return {
     width,
-    left: video.x * (workspace.width - width),
-    top: video.y * (workspace.height - height),
+    left: video.x * maxLeft,
+    top: video.y * maxTop,
+    maxLeft,
+    maxTop,
   }
 }
 
-function Workspace({ videos, showPlaceholder, background, onVideoMetadata }) {
+function Workspace({
+  videos,
+  showPlaceholder,
+  background,
+  onVideoMetadata,
+  onVideoMove,
+}) {
   const ref = useRef(null)
   const size = useElementSize(ref)
 
@@ -56,6 +66,7 @@ function Workspace({ videos, showPlaceholder, background, onVideoMetadata }) {
             video={video}
             rect={getTileRect(video, size)}
             onMetadata={onVideoMetadata}
+            onMove={onVideoMove}
           />
         ))}
     </main>

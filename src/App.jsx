@@ -76,6 +76,12 @@ function App() {
     )
   }
 
+  function handleVideoMove(id, x, y) {
+    setVideos((current) =>
+      current.map((video) => (video.id === id ? { ...video, x, y } : video)),
+    )
+  }
+
   function handleRandomizeLayout() {
     setVideos(videos.map((video) => ({ ...video, ...randomLayout() })))
   }
@@ -103,6 +109,7 @@ function App() {
         showPlaceholder={videos.length === 0}
         background={background}
         onVideoMetadata={handleVideoMetadata}
+        onVideoMove={handleVideoMove}
       />
       {presentation.isPresenting ? (
         <button
