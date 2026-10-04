@@ -1,6 +1,9 @@
+import RevealControls from './RevealControls.jsx'
+
 function ControlPanel({
   videoCount,
   hasBackground,
+  reveal,
   onAddVideos,
   onSetBackground,
   onRandomizeLayout,
@@ -47,6 +50,8 @@ function ControlPanel({
       >
         Randomize layout
       </button>
+
+      <RevealControls reveal={reveal} />
 
       <button
         type="button"

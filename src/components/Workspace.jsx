@@ -34,7 +34,7 @@ function getTileRect(video, workspace) {
   }
 }
 
-function Workspace({ videos, background, onVideoMetadata }) {
+function Workspace({ videos, showPlaceholder, background, onVideoMetadata }) {
   const ref = useRef(null)
   const size = useElementSize(ref)
 
@@ -44,7 +44,7 @@ function Workspace({ videos, background, onVideoMetadata }) {
 
   return (
     <main className="workspace" style={style} ref={ref}>
-      {videos.length === 0 && (
+      {showPlaceholder && (
         <p className="workspace__empty">
           Upload videos from the panel to start your collage.
         </p>

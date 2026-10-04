@@ -65,6 +65,8 @@
   left: 24px;
   z-index: 10;
   width: 256px;
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -129,6 +131,60 @@
   margin: 0;
   font-size: 0.75rem;
   color: #6b6b78;
+}
+
+/* Reveal controls */
+
+.reveal-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #a0a0ad;
+}
+
+.reveal-controls__toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #e8e8ec;
+  cursor: pointer;
+}
+
+.reveal-controls__interval {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.reveal-controls__interval select {
+  padding: 4px 6px;
+  border: 1px solid #34343f;
+  border-radius: 6px;
+  background: #1e1e27;
+  color: #e8e8ec;
+  font: inherit;
+}
+
+.reveal-controls__buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.reveal-controls__buttons .control-panel__button {
+  padding: 6px 4px;
+  font-size: 0.75rem;
+}
+
+.reveal-controls__progress {
+  margin: 0;
+  font-size: 0.75rem;
 }
 
 /* Presentation mode */

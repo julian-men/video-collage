@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ControlPanel from './components/ControlPanel.jsx'
 import Workspace from './components/Workspace.jsx'
 import usePresentationMode from './hooks/usePresentationMode.js'
+import useRevealMode from './hooks/useRevealMode.js'
 import './App.css'
 
 const MIN_VIDEO_WIDTH = 240
@@ -40,6 +41,8 @@ function App() {
 
   const appRef = useRef(null)
   const presentation = usePresentationMode(appRef)
+  const reveal = useRevealMode(videos.length)
+  const visibleVideos = videos.slice(0, reveal.visibleCount)
 
   // Tracks every live object URL so they can be revoked when the app unmounts.
   const liveUrls = useRef(new Set())
@@ -90,12 +93,14 @@ function App() {
     if (background) revoke(background.url)
     setVideos([])
     setBackground(null)
+    reveal.restoreInitial()
   }
 
   return (
     <div className="app" ref={appRef}>
       <Workspace
-        videos={videos}
+        videos={visibleVideos}
+        showPlaceholder={videos.length === 0}
         background={background}
         onVideoMetadata={handleVideoMetadata}
       />
@@ -111,6 +116,7 @@ function App() {
         <ControlPanel
           videoCount={videos.length}
           hasBackground={background !== null}
+          reveal={reveal}
           onAddVideos={handleAddVideos}
           onSetBackground={handleSetBackground}
           onRandomizeLayout={handleRandomizeLayout}
