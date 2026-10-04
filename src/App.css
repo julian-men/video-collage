@@ -9,7 +9,7 @@
 .workspace {
   position: absolute;
   inset: 0;
-  overflow: auto;
+  overflow: hidden;
   background-color: #0b0b0f;
   background-size: cover;
   background-position: center;
@@ -26,19 +26,13 @@
   font-size: 1.1rem;
 }
 
-.workspace__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  padding: 24px 24px 24px 304px;
-}
-
 /* Video tile */
 
 .video-tile {
-  position: relative;
+  position: absolute;
+  z-index: 1;
   margin: 0;
-  border-radius: 10px;
+  border-radius: 0;
   overflow: hidden;
   background: #000;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
@@ -47,8 +41,7 @@
 .video-tile__video {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  object-fit: cover;
+  height: auto;
 }
 
 .video-tile__caption {
@@ -102,22 +95,32 @@
   color: #e8e8ec;
 }
 
-.control-panel__clear {
+.control-panel__button {
   padding: 8px 12px;
-  border: 1px solid #5a2a2f;
+  border: 1px solid #34343f;
   border-radius: 8px;
-  background: #2a1215;
-  color: #ff9ca5;
+  background: #1e1e27;
+  color: #e8e8ec;
   font: inherit;
   font-size: 0.85rem;
   cursor: pointer;
 }
 
-.control-panel__clear:hover:not(:disabled) {
+.control-panel__button:hover:not(:disabled) {
+  background: #2a2a35;
+}
+
+.control-panel__button--danger {
+  border-color: #5a2a2f;
+  background: #2a1215;
+  color: #ff9ca5;
+}
+
+.control-panel__button--danger:hover:not(:disabled) {
   background: #3a171b;
 }
 
-.control-panel__clear:disabled {
+.control-panel__button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -134,9 +137,5 @@
     left: 12px;
     right: 12px;
     width: auto;
-  }
-
-  .workspace__grid {
-    padding: 260px 12px 12px;
   }
 }

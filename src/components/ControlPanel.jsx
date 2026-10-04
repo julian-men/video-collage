@@ -3,6 +3,7 @@ function ControlPanel({
   hasBackground,
   onAddVideos,
   onSetBackground,
+  onRandomizeLayout,
   onClearAll,
 }) {
   function handleVideoChange(event) {
@@ -39,7 +40,16 @@ function ControlPanel({
 
       <button
         type="button"
-        className="control-panel__clear"
+        className="control-panel__button"
+        onClick={onRandomizeLayout}
+        disabled={videoCount === 0}
+      >
+        Randomize layout
+      </button>
+
+      <button
+        type="button"
+        className="control-panel__button control-panel__button--danger"
         onClick={onClearAll}
         disabled={isEmpty}
       >
