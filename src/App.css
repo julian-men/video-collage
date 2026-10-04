@@ -1,0 +1,142 @@
+.app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Workspace */
+
+.workspace {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  background-color: #0b0b0f;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.workspace__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: #6b6b78;
+  font-size: 1.1rem;
+}
+
+.workspace__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 24px 24px 24px 304px;
+}
+
+/* Video tile */
+
+.video-tile {
+  position: relative;
+  margin: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.video-tile__video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.video-tile__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+
+/* Control panel */
+
+.control-panel {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  z-index: 10;
+  width: 256px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(18, 18, 24, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.control-panel__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.control-panel__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #a0a0ad;
+}
+
+.control-panel__field input {
+  font-size: 0.75rem;
+  color: #e8e8ec;
+}
+
+.control-panel__clear {
+  padding: 8px 12px;
+  border: 1px solid #5a2a2f;
+  border-radius: 8px;
+  background: #2a1215;
+  color: #ff9ca5;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.control-panel__clear:hover:not(:disabled) {
+  background: #3a171b;
+}
+
+.control-panel__clear:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.control-panel__status {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #6b6b78;
+}
+
+@media (max-width: 640px) {
+  .control-panel {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+  }
+
+  .workspace__grid {
+    padding: 260px 12px 12px;
+  }
+}
