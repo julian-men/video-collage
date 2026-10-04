@@ -4,6 +4,7 @@ function ControlPanel({
   onAddVideos,
   onSetBackground,
   onRandomizeLayout,
+  onEnterPresentation,
   onClearAll,
 }) {
   function handleVideoChange(event) {
@@ -45,6 +46,14 @@ function ControlPanel({
         disabled={videoCount === 0}
       >
         Randomize layout
+      </button>
+
+      <button
+        type="button"
+        className="control-panel__button"
+        onClick={onEnterPresentation}
+      >
+        Enter presentation mode
       </button>
 
       <button

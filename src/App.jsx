@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ControlPanel from './components/ControlPanel.jsx'
 import Workspace from './components/Workspace.jsx'
+import usePresentationMode from './hooks/usePresentationMode.js'
 import './App.css'
 
 const MIN_VIDEO_WIDTH = 240
@@ -36,6 +37,9 @@ function createVideoItem(file) {
 function App() {
   const [videos, setVideos] = useState([])
   const [background, setBackground] = useState(null)
+
+  const appRef = useRef(null)
+  const presentation = usePresentationMode(appRef)
 
   // Tracks every live object URL so they can be revoked when the app unmounts.
   const liveUrls = useRef(new Set())
@@ -89,20 +93,31 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" ref={appRef}>
       <Workspace
         videos={videos}
         background={background}
         onVideoMetadata={handleVideoMetadata}
       />
-      <ControlPanel
-        videoCount={videos.length}
-        hasBackground={background !== null}
-        onAddVideos={handleAddVideos}
-        onSetBackground={handleSetBackground}
-        onRandomizeLayout={handleRandomizeLayout}
-        onClearAll={handleClearAll}
-      />
+      {presentation.isPresenting ? (
+        <button
+          type="button"
+          className="exit-presentation"
+          onClick={presentation.exit}
+        >
+          Exit presentation mode
+        </button>
+      ) : (
+        <ControlPanel
+          videoCount={videos.length}
+          hasBackground={background !== null}
+          onAddVideos={handleAddVideos}
+          onSetBackground={handleSetBackground}
+          onRandomizeLayout={handleRandomizeLayout}
+          onEnterPresentation={presentation.enter}
+          onClearAll={handleClearAll}
+        />
+      )}
     </div>
   )
 }

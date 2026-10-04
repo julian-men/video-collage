@@ -131,6 +131,30 @@
   color: #6b6b78;
 }
 
+/* Presentation mode */
+
+.exit-presentation {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  padding: 6px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.75);
+  font: inherit;
+  font-size: 0.7rem;
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+}
+
+.exit-presentation:hover,
+.exit-presentation:focus-visible {
+  opacity: 1;
+}
+
 @media (max-width: 640px) {
   .control-panel {
     top: 12px;
