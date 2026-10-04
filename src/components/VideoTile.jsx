@@ -4,7 +4,7 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
-function VideoTile({ video, rect, onMetadata, onMove }) {
+function VideoTile({ video, rect, onMetadata, onMove, onBringToFront }) {
   const dragRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -18,6 +18,7 @@ function VideoTile({ video, rect, onMetadata, onMove }) {
   function handlePointerDown(event) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     event.preventDefault()
+    onBringToFront(video.id)
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = {
       pointerId: event.pointerId,
@@ -51,7 +52,12 @@ function VideoTile({ video, rect, onMetadata, onMove }) {
   return (
     <figure
       className={`video-tile${isDragging ? ' video-tile--dragging' : ''}`}
-      style={{ width: rect.width, left: rect.left, top: rect.top }}
+      style={{
+        width: rect.width,
+        left: rect.left,
+        top: rect.top,
+        zIndex: video.zIndex,
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}

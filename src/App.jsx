@@ -37,6 +37,10 @@ function createVideoItem(file) {
   }
 }
 
+function topZIndex(videos) {
+  return videos.reduce((max, video) => Math.max(max, video.zIndex), 0)
+}
+
 function App() {
   const [videos, setVideos] = useState([])
   const [background, setBackground] = useState(null)
@@ -68,7 +72,27 @@ function App() {
       .filter((file) => file.type.startsWith('video/'))
       .map(createVideoItem)
     newVideos.forEach((video) => liveUrls.current.add(video.url))
-    setVideos((current) => [...current, ...newVideos])
+    setVideos((current) => {
+      const top = topZIndex(current)
+      return [
+        ...current,
+        ...newVideos.map((video, index) => ({
+          ...video,
+          zIndex: top + index + 1,
+        })),
+      ]
+    })
+  }
+
+  function handleBringToFront(id) {
+    setVideos((current) => {
+      const top = topZIndex(current)
+      const target = current.find((video) => video.id === id)
+      if (!target || target.zIndex === top) return current
+      return current.map((video) =>
+        video.id === id ? { ...video, zIndex: top + 1 } : video,
+      )
+    })
   }
 
   function handleVideoMetadata(id, aspectRatio) {
@@ -141,6 +165,7 @@ function App() {
         background={background}
         onVideoMetadata={handleVideoMetadata}
         onVideoMove={handleVideoMove}
+        onVideoBringToFront={handleBringToFront}
       />
       {presentation.isPresenting ? (
         <button

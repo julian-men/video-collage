@@ -44,6 +44,7 @@ function Workspace({
   background,
   onVideoMetadata,
   onVideoMove,
+  onVideoBringToFront,
 }) {
   const ref = useRef(null)
   const size = useElementSize(ref)
@@ -67,6 +68,7 @@ function Workspace({
             rect={getTileRect(video, size)}
             onMetadata={onVideoMetadata}
             onMove={onVideoMove}
+            onBringToFront={onVideoBringToFront}
           />
         ))}
     </main>
