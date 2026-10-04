@@ -42,7 +42,7 @@ function RevealControls({ reveal }) {
           <div className="reveal-controls__buttons">
             <button
               type="button"
-              className="control-panel__button"
+              className="control-panel__button control-panel__button--accent"
               onClick={reveal.start}
               disabled={isRunning || isComplete}
             >

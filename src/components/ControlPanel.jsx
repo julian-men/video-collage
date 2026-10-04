@@ -55,7 +55,7 @@ function ControlPanel({
 
       <button
         type="button"
-        className="control-panel__button"
+        className="control-panel__button control-panel__button--accent"
         onClick={onEnterPresentation}
       >
         Enter presentation mode

@@ -1,9 +1,65 @@
 :root {
-  color-scheme: dark;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Palette */
+  --sky-top: #2fa9ec;
+  --sky-mid: #8fd6ff;
+  --sky-low: #dcf5ff;
+  --meadow: #b9eb9a;
+  --aqua: #1eb6e6;
+  --aqua-deep: #0a5fa8;
+  --aqua-border: #0b5a99;
+  --green: #4cbb2a;
+  --green-deep: #2a8512;
+  --green-border: #22700e;
+  --danger: #dc4740;
+  --danger-deep: #ad2621;
+  --danger-border: #8f1f1b;
+  --text: #06304f;
+  --text-muted: #2a5675;
+  --text-on-gel: #ffffff;
+  --white: #ffffff;
+
+  /* Glass surfaces */
+  --glass-bg: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.82) 0%,
+    rgba(232, 248, 255, 0.7) 45%,
+    rgba(214, 242, 255, 0.66) 100%
+  );
+  --glass-inner-bg: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.6),
+    rgba(205, 238, 255, 0.45)
+  );
+  --glass-border: rgba(255, 255, 255, 0.95);
+  --glass-blur: blur(18px) saturate(160%);
+  --glass-shine: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+
+  /* Gel buttons: highlight, bright half, hard split, deep half */
+  --gel-aqua: linear-gradient(180deg, #7fd8ff 0%, #1d8fdb 48%, #075aa6 52%, #1279cc 100%);
+  --gel-green: linear-gradient(180deg, #b8f27e 0%, #45ad23 48%, #2a8512 52%, #3fa21f 100%);
+  --gel-danger: linear-gradient(180deg, #ffb3a8 0%, #e2504a 48%, #b8302b 52%, #d0433c 100%);
+  --gel-light: linear-gradient(180deg, #ffffff 0%, #e6f7ff 48%, #c4ebff 52%, #e2f6ff 100%);
+
+  /* Shadows and radii */
+  --shadow-soft: 0 10px 30px rgba(6, 70, 130, 0.25), 0 2px 6px rgba(6, 70, 130, 0.15);
+  --shadow-gel: inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    inset 0 -3px 6px rgba(0, 40, 90, 0.25), 0 3px 8px rgba(0, 70, 140, 0.3);
+  --shadow-inset: inset 0 1px 3px rgba(0, 60, 120, 0.18);
+  --focus-ring: 0 0 0 3px var(--white), 0 0 0 6px var(--aqua);
+  --radius-panel: 24px;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+
+  color-scheme: light;
+  font-family: 'Segoe UI', Frutiger, 'Frutiger Linotype', 'Myriad Pro',
+    system-ui, -apple-system, Roboto, sans-serif;
   line-height: 1.4;
-  color: #e8e8ec;
-  background: #0b0b0f;
+  color: var(--text);
+  background: var(--sky-mid);
   -webkit-font-smoothing: antialiased;
 }
 
