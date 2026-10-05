@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { NO_VIDEO_PICTURE_MESSAGE, describeLoadError } from '../utils/mediaFiles.js'
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
@@ -11,6 +12,7 @@ function MediaTile({
   onMove,
   onBringToFront,
   onRemove,
+  onLoadError,
 }) {
   const dragRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -70,7 +72,19 @@ function MediaTile({
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
     >
-      {item.type === 'video' ? (
+      {item.loadError ? (
+        <div
+          className="media-tile__failed"
+          style={mediaStyle}
+          role="img"
+          aria-label={`${item.name} could not be displayed`}
+        >
+          <span className="media-tile__failed-icon" aria-hidden="true">
+            !
+          </span>
+          <span>Can't display this file</span>
+        </div>
+      ) : item.type === 'video' ? (
         <video
           className="media-tile__media"
           src={item.url}
@@ -80,10 +94,18 @@ function MediaTile({
           loop
           playsInline
           disablePictureInPicture
-          onLoadedMetadata={(event) =>
-            reportAspectRatio(
-              event.currentTarget.videoWidth,
-              event.currentTarget.videoHeight,
+          onLoadedMetadata={(event) => {
+            const { videoWidth, videoHeight } = event.currentTarget
+            if (videoWidth === 0 || videoHeight === 0) {
+              onLoadError(item.id, NO_VIDEO_PICTURE_MESSAGE)
+            } else {
+              reportAspectRatio(videoWidth, videoHeight)
+            }
+          }}
+          onError={(event) =>
+            onLoadError(
+              item.id,
+              describeLoadError('video', event.currentTarget.error?.code),
             )
           }
         />
@@ -100,6 +122,7 @@ function MediaTile({
               event.currentTarget.naturalHeight,
             )
           }
+          onError={() => onLoadError(item.id, describeLoadError('image'))}
         />
       )}
       <figcaption className="media-tile__caption">{item.name}</figcaption>

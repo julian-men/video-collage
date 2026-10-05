@@ -41,6 +41,7 @@ function loadImage(url) {
 function measureTiles(workspace) {
   const origin = workspace.getBoundingClientRect()
   return [...workspace.querySelectorAll('.media-tile')]
+    .filter((tile) => tile.querySelector('.media-tile__media'))
     .map((tile) => {
       const media = tile.querySelector('.media-tile__media')
       const rect = media.getBoundingClientRect()

@@ -46,6 +46,7 @@ function Workspace({
   onItemMove,
   onItemBringToFront,
   onItemRemove,
+  onItemLoadError,
 }) {
   const ref = useRef(null)
   const size = useElementSize(ref)
@@ -71,6 +72,7 @@ function Workspace({
             onMove={onItemMove}
             onBringToFront={onItemBringToFront}
             onRemove={onItemRemove}
+            onLoadError={onItemLoadError}
           />
         ))}
     </main>

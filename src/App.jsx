@@ -2,42 +2,29 @@ import { useEffect, useRef, useState } from 'react'
 import AboutDialog from './components/AboutDialog.jsx'
 import ControlPanel from './components/ControlPanel.jsx'
 import CreditBar from './components/CreditBar.jsx'
+import NoticeStack from './components/NoticeStack.jsx'
 import ShortcutHelp from './components/ShortcutHelp.jsx'
 import Workspace from './components/Workspace.jsx'
 import useCollageExport from './hooks/useCollageExport.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
+import {
+  MEDIA_ACCEPT,
+  SUPPORTED_MEDIA_DESCRIPTION,
+  probeMedia,
+  validateBackgroundFile,
+  validateMediaFile,
+} from './utils/mediaFiles.js'
 import './App.css'
 
 const MIN_ITEM_WIDTH = 240
 const MAX_ITEM_WIDTH = 480
 const DEFAULT_ASPECT_RATIO = 16 / 9
+const MAX_NOTICES = 4
 
-const IMAGE_MIME_TYPES = new Set([
-  'image/png',
-  'image/jpeg',
-  'image/gif',
-  'image/webp',
-])
-const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp'])
-const VIDEO_EXTENSIONS = new Set(['mp4', 'm4v', 'mov', 'webm', 'ogv'])
-
-const MEDIA_ACCEPT = [
-  'video/*',
-  ...IMAGE_MIME_TYPES,
-  ...[...IMAGE_EXTENSIONS].map((extension) => `.${extension}`),
-].join(',')
-
-// Some systems report an empty MIME type, so fall back to the file extension.
-function getMediaType(file) {
-  if (file.type.startsWith('video/')) return 'video'
-  if (IMAGE_MIME_TYPES.has(file.type)) return 'image'
-  if (file.type) return null
-  const extension = file.name.split('.').pop().toLowerCase()
-  if (VIDEO_EXTENSIONS.has(extension)) return 'video'
-  if (IMAGE_EXTENSIONS.has(extension)) return 'image'
-  return null
+function createNotice(fields) {
+  return { id: crypto.randomUUID(), ...fields }
 }
 
 function createObjectUrlItem(file) {
@@ -76,8 +63,18 @@ function App() {
   const [background, setBackground] = useState(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
+  const [notices, setNotices] = useState([])
 
   const appRef = useRef(null)
+  // Cancel functions for in-flight load checks, keyed by item id.
+  const probes = useRef(new Map())
+  // Bumped whenever a newer background request (or clear-all) supersedes one.
+  const backgroundRequest = useRef(0)
+  const backgroundRef = useRef(background)
+
+  useEffect(() => {
+    backgroundRef.current = background
+  }, [background])
   const presentation = usePresentationMode(appRef)
   const reveal = useRevealMode(items.length)
   const visibleItems = items.slice(0, reveal.visibleCount)
@@ -88,7 +85,10 @@ function App() {
 
   useEffect(() => {
     const urls = liveUrls.current
+    const pendingProbes = probes.current
     return () => {
+      pendingProbes.forEach((cancel) => cancel())
+      pendingProbes.clear()
       urls.forEach((url) => URL.revokeObjectURL(url))
       urls.clear()
     }
@@ -99,11 +99,73 @@ function App() {
     liveUrls.current.delete(url)
   }
 
+  function pushNotice(fields) {
+    const notice = createNotice(fields)
+    setNotices((current) => [...current, notice].slice(-MAX_NOTICES))
+  }
+
+  function dismissNotice(id) {
+    setNotices((current) => current.filter((notice) => notice.id !== id))
+  }
+
+  function cancelProbe(id) {
+    probes.current.get(id)?.()
+    probes.current.delete(id)
+  }
+
+  function markItemFailed(id, name, message) {
+    const notice = createNotice({
+      kind: 'error',
+      title: `Couldn't display “${name}”`,
+      message,
+      itemId: id,
+    })
+    setItems((current) =>
+      current.map((item) =>
+        item.id === id && !item.loadError ? { ...item, loadError: message } : item,
+      ),
+    )
+    setNotices((current) =>
+      current.some((existing) => existing.itemId === id)
+        ? current
+        : [...current, notice].slice(-MAX_NOTICES),
+    )
+  }
+
+  // Checks every new item in a detached element, so files hidden by reveal
+  // mode are verified too.
+  function startProbe(item) {
+    const probe = probeMedia(item.url, item.type)
+    probes.current.set(item.id, probe.cancel)
+    probe.promise.then((result) => {
+      if (!probes.current.has(item.id)) return
+      probes.current.delete(item.id)
+      if (result.ok === false) markItemFailed(item.id, item.name, result.message)
+    })
+  }
+
   function handleAddMedia(files) {
-    const newItems = files
-      .map((file) => ({ file, type: getMediaType(file) }))
-      .filter(({ type }) => type !== null)
-      .map(({ file, type }) => createMediaItem(file, type))
+    const newItems = []
+    const rejected = []
+    for (const file of files) {
+      const result = validateMediaFile(file)
+      if (result.type) newItems.push(createMediaItem(file, result.type))
+      else rejected.push(`${file.name} (${result.reason})`)
+    }
+
+    if (rejected.length > 0) {
+      pushNotice({
+        kind: 'warning',
+        title:
+          rejected.length === 1
+            ? '1 file was not added'
+            : `${rejected.length} files were not added`,
+        files: rejected,
+        message: SUPPORTED_MEDIA_DESCRIPTION,
+      })
+    }
+    if (newItems.length === 0) return
+
     newItems.forEach((item) => liveUrls.current.add(item.url))
     setItems((current) => {
       const top = topZIndex(current)
@@ -115,6 +177,12 @@ function App() {
         })),
       ]
     })
+    newItems.forEach(startProbe)
+  }
+
+  function handleItemLoadError(id, message) {
+    const item = items.find((candidate) => candidate.id === id)
+    if (item) markItemFailed(id, item.name, message)
   }
 
   function handleBringToFront(id) {
@@ -143,8 +211,10 @@ function App() {
   function handleRemove(id) {
     const index = items.findIndex((item) => item.id === id)
     if (index === -1) return
+    cancelProbe(id)
     revoke(items[index].url)
     setItems(items.filter((item) => item.id !== id))
+    setNotices((current) => current.filter((notice) => notice.itemId !== id))
     reveal.handleRemoved(index)
   }
 
@@ -152,19 +222,52 @@ function App() {
     setItems(items.map((item) => ({ ...item, ...randomLayout() })))
   }
 
-  function handleSetBackground(file) {
-    if (!file || !file.type.startsWith('image/')) return
-    if (background) revoke(background.url)
+  // The current background is only replaced once the new image has loaded,
+  // so a broken file never leaves the workspace without its old background.
+  async function handleSetBackground(file) {
+    if (!file) return
+    const problem = validateBackgroundFile(file)
+    if (problem) {
+      pushNotice({
+        kind: 'warning',
+        title: `“${file.name}” can't be used as a background`,
+        message: `It was not added because ${problem}. Choose a PNG, JPG/JPEG, GIF, or WebP image.`,
+      })
+      return
+    }
+
+    const request = ++backgroundRequest.current
     const next = createObjectUrlItem(file)
     liveUrls.current.add(next.url)
+    const result = await probeMedia(next.url, 'image').promise
+    if (request !== backgroundRequest.current) {
+      revoke(next.url)
+      return
+    }
+    if (result.ok === false) {
+      revoke(next.url)
+      pushNotice({
+        kind: 'error',
+        title: `Background “${file.name}” couldn't be loaded`,
+        message: `${result.message}${
+          backgroundRef.current ? ' Your previous background was kept.' : ''
+        }`,
+      })
+      return
+    }
+    if (backgroundRef.current) revoke(backgroundRef.current.url)
     setBackground(next)
   }
 
   function handleClearAll() {
+    probes.current.forEach((cancel) => cancel())
+    probes.current.clear()
+    backgroundRequest.current += 1
     items.forEach((item) => revoke(item.url))
     if (background) revoke(background.url)
     setItems([])
     setBackground(null)
+    setNotices((current) => current.filter((notice) => !notice.itemId))
     reveal.restoreInitial()
   }
 
@@ -223,6 +326,7 @@ function App() {
         onItemMove={handleMove}
         onItemBringToFront={handleBringToFront}
         onItemRemove={handleRemove}
+        onItemLoadError={handleItemLoadError}
       />
       {presentation.isPresenting ? (
         <button
@@ -252,6 +356,13 @@ function App() {
         <CreditBar
           isAboutOpen={isAboutOpen}
           onOpenAbout={() => setIsAboutOpen(true)}
+        />
+      )}
+      {!presentation.isPresenting && (
+        <NoticeStack
+          notices={notices}
+          onDismiss={dismissNotice}
+          onRemoveItem={handleRemove}
         />
       )}
       {isAboutOpen && !presentation.isPresenting && (
