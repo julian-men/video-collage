@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ControlPanel from './components/ControlPanel.jsx'
 import ShortcutHelp from './components/ShortcutHelp.jsx'
 import Workspace from './components/Workspace.jsx'
+import useCollageExport from './hooks/useCollageExport.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
@@ -77,6 +78,7 @@ function App() {
   const presentation = usePresentationMode(appRef)
   const reveal = useRevealMode(items.length)
   const visibleItems = items.slice(0, reveal.visibleCount)
+  const collageExport = useCollageExport()
 
   // Tracks every live object URL so they can be revoked when the app unmounts.
   const liveUrls = useRef(new Set())
@@ -163,6 +165,14 @@ function App() {
     reveal.restoreInitial()
   }
 
+  function handleExport() {
+    if (reveal.enabled || items.length === 0) return
+    collageExport.exportWebm({
+      workspace: appRef.current?.querySelector('.workspace'),
+      background,
+    })
+  }
+
   function handleRevealNext() {
     if (!reveal.enabled) return false
     reveal.revealNext()
@@ -223,6 +233,9 @@ function App() {
           onSetBackground={handleSetBackground}
           onRandomizeLayout={handleRandomizeLayout}
           onEnterPresentation={presentation.enter}
+          isExporting={collageExport.isExporting}
+          exportError={collageExport.error}
+          onExport={handleExport}
           onClearAll={handleClearAll}
         />
       )}

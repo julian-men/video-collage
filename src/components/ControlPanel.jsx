@@ -9,6 +9,9 @@ function ControlPanel({
   onSetBackground,
   onRandomizeLayout,
   onEnterPresentation,
+  isExporting,
+  exportError,
+  onExport,
   onClearAll,
 }) {
   function handleMediaChange(event) {
@@ -23,6 +26,10 @@ function ControlPanel({
   }
 
   const isEmpty = itemCount === 0 && !hasBackground
+
+  let exportHint = 'Record a 5-second WebM of the collage'
+  if (reveal.enabled) exportHint = 'Turn off Reveal mode to export'
+  else if (itemCount === 0) exportHint = 'Add media to export'
 
   return (
     <aside className="control-panel">
@@ -61,6 +68,23 @@ function ControlPanel({
       >
         Enter presentation mode
       </button>
+
+      <button
+        type="button"
+        className="control-panel__button"
+        onClick={onExport}
+        disabled={isExporting || reveal.enabled || itemCount === 0}
+        title={exportHint}
+        aria-busy={isExporting}
+      >
+        {isExporting ? 'Exporting…' : 'Export WebM'}
+      </button>
+
+      {exportError && (
+        <p className="control-panel__error" role="alert">
+          {exportError}
+        </p>
+      )}
 
       <button
         type="button"

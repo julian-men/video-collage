@@ -400,6 +400,17 @@
   color: var(--text-muted);
 }
 
+.control-panel__error {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(173, 38, 33, 0.35);
+  border-radius: var(--radius-card);
+  background: rgba(255, 235, 233, 0.85);
+  color: var(--danger-deep);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 /* Reveal controls */
 
 .reveal-controls {
