@@ -67,8 +67,8 @@ function RevealControls({ reveal }) {
           </div>
 
           <p className="reveal-controls__progress">
-            {visibleCount} of {totalCount} video{totalCount === 1 ? '' : 's'}{' '}
-            revealed
+            {visibleCount} of {totalCount} media item
+            {totalCount === 1 ? '' : 's'} revealed
           </p>
         </>
       )}

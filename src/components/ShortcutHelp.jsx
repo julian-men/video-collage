@@ -1,6 +1,6 @@
 const SHORTCUTS = [
   ['Space', 'Start / pause reveal'],
-  ['→ or N', 'Reveal next video'],
+  ['→ or N', 'Reveal next item'],
   ['R', 'Reset reveal'],
   ['L', 'Randomize layout'],
   ['Esc', 'Exit presentation mode'],

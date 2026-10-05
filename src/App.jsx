@@ -7,11 +7,37 @@ import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
 import './App.css'
 
-const MIN_VIDEO_WIDTH = 240
-const MAX_VIDEO_WIDTH = 480
+const MIN_ITEM_WIDTH = 240
+const MAX_ITEM_WIDTH = 480
 const DEFAULT_ASPECT_RATIO = 16 / 9
 
-function createMediaItem(file) {
+const IMAGE_MIME_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+])
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp'])
+const VIDEO_EXTENSIONS = new Set(['mp4', 'm4v', 'mov', 'webm', 'ogv'])
+
+const MEDIA_ACCEPT = [
+  'video/*',
+  ...IMAGE_MIME_TYPES,
+  ...[...IMAGE_EXTENSIONS].map((extension) => `.${extension}`),
+].join(',')
+
+// Some systems report an empty MIME type, so fall back to the file extension.
+function getMediaType(file) {
+  if (file.type.startsWith('video/')) return 'video'
+  if (IMAGE_MIME_TYPES.has(file.type)) return 'image'
+  if (file.type) return null
+  const extension = file.name.split('.').pop().toLowerCase()
+  if (VIDEO_EXTENSIONS.has(extension)) return 'video'
+  if (IMAGE_EXTENSIONS.has(extension)) return 'image'
+  return null
+}
+
+function createObjectUrlItem(file) {
   return {
     id: crypto.randomUUID(),
     name: file.name,
@@ -20,36 +46,37 @@ function createMediaItem(file) {
 }
 
 // Positions are stored as 0–1 fractions of the free space in the workspace, so
-// a video stays fully visible no matter how large the workspace is.
+// an item stays fully visible no matter how large the workspace is.
 function randomLayout() {
   return {
-    width: MIN_VIDEO_WIDTH + Math.random() * (MAX_VIDEO_WIDTH - MIN_VIDEO_WIDTH),
+    width: MIN_ITEM_WIDTH + Math.random() * (MAX_ITEM_WIDTH - MIN_ITEM_WIDTH),
     x: Math.random(),
     y: Math.random(),
   }
 }
 
-function createVideoItem(file) {
+function createMediaItem(file, type) {
   return {
-    ...createMediaItem(file),
+    ...createObjectUrlItem(file),
     ...randomLayout(),
+    type,
     aspectRatio: DEFAULT_ASPECT_RATIO,
   }
 }
 
-function topZIndex(videos) {
-  return videos.reduce((max, video) => Math.max(max, video.zIndex), 0)
+function topZIndex(items) {
+  return items.reduce((max, item) => Math.max(max, item.zIndex), 0)
 }
 
 function App() {
-  const [videos, setVideos] = useState([])
+  const [items, setItems] = useState([])
   const [background, setBackground] = useState(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
 
   const appRef = useRef(null)
   const presentation = usePresentationMode(appRef)
-  const reveal = useRevealMode(videos.length)
-  const visibleVideos = videos.slice(0, reveal.visibleCount)
+  const reveal = useRevealMode(items.length)
+  const visibleItems = items.slice(0, reveal.visibleCount)
 
   // Tracks every live object URL so they can be revoked when the app unmounts.
   const liveUrls = useRef(new Set())
@@ -67,17 +94,18 @@ function App() {
     liveUrls.current.delete(url)
   }
 
-  function handleAddVideos(files) {
-    const newVideos = files
-      .filter((file) => file.type.startsWith('video/'))
-      .map(createVideoItem)
-    newVideos.forEach((video) => liveUrls.current.add(video.url))
-    setVideos((current) => {
+  function handleAddMedia(files) {
+    const newItems = files
+      .map((file) => ({ file, type: getMediaType(file) }))
+      .filter(({ type }) => type !== null)
+      .map(({ file, type }) => createMediaItem(file, type))
+    newItems.forEach((item) => liveUrls.current.add(item.url))
+    setItems((current) => {
       const top = topZIndex(current)
       return [
         ...current,
-        ...newVideos.map((video, index) => ({
-          ...video,
+        ...newItems.map((item, index) => ({
+          ...item,
           zIndex: top + index + 1,
         })),
       ]
@@ -85,54 +113,52 @@ function App() {
   }
 
   function handleBringToFront(id) {
-    setVideos((current) => {
+    setItems((current) => {
       const top = topZIndex(current)
-      const target = current.find((video) => video.id === id)
+      const target = current.find((item) => item.id === id)
       if (!target || target.zIndex === top) return current
-      return current.map((video) =>
-        video.id === id ? { ...video, zIndex: top + 1 } : video,
+      return current.map((item) =>
+        item.id === id ? { ...item, zIndex: top + 1 } : item,
       )
     })
   }
 
-  function handleVideoMetadata(id, aspectRatio) {
-    setVideos((current) =>
-      current.map((video) =>
-        video.id === id ? { ...video, aspectRatio } : video,
-      ),
+  function handleAspectRatio(id, aspectRatio) {
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, aspectRatio } : item)),
     )
   }
 
-  function handleVideoMove(id, x, y) {
-    setVideos((current) =>
-      current.map((video) => (video.id === id ? { ...video, x, y } : video)),
+  function handleMove(id, x, y) {
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, x, y } : item)),
     )
   }
 
-  function handleRemoveVideo(id) {
-    const index = videos.findIndex((video) => video.id === id)
+  function handleRemove(id) {
+    const index = items.findIndex((item) => item.id === id)
     if (index === -1) return
-    revoke(videos[index].url)
-    setVideos(videos.filter((video) => video.id !== id))
+    revoke(items[index].url)
+    setItems(items.filter((item) => item.id !== id))
     reveal.handleRemoved(index)
   }
 
   function handleRandomizeLayout() {
-    setVideos(videos.map((video) => ({ ...video, ...randomLayout() })))
+    setItems(items.map((item) => ({ ...item, ...randomLayout() })))
   }
 
   function handleSetBackground(file) {
     if (!file || !file.type.startsWith('image/')) return
     if (background) revoke(background.url)
-    const next = createMediaItem(file)
+    const next = createObjectUrlItem(file)
     liveUrls.current.add(next.url)
     setBackground(next)
   }
 
   function handleClearAll() {
-    videos.forEach((video) => revoke(video.url))
+    items.forEach((item) => revoke(item.url))
     if (background) revoke(background.url)
-    setVideos([])
+    setItems([])
     setBackground(null)
     reveal.restoreInitial()
   }
@@ -155,7 +181,7 @@ function App() {
       reveal.reset()
     },
     l: () => {
-      if (videos.length === 0) return false
+      if (items.length === 0) return false
       handleRandomizeLayout()
     },
     '?': () => setIsHelpOpen((open) => !open),
@@ -171,13 +197,13 @@ function App() {
       ref={appRef}
     >
       <Workspace
-        videos={visibleVideos}
-        showPlaceholder={videos.length === 0}
+        items={visibleItems}
+        showPlaceholder={items.length === 0}
         background={background}
-        onVideoMetadata={handleVideoMetadata}
-        onVideoMove={handleVideoMove}
-        onVideoBringToFront={handleBringToFront}
-        onVideoRemove={handleRemoveVideo}
+        onItemAspectRatio={handleAspectRatio}
+        onItemMove={handleMove}
+        onItemBringToFront={handleBringToFront}
+        onItemRemove={handleRemove}
       />
       {presentation.isPresenting ? (
         <button
@@ -189,10 +215,11 @@ function App() {
         </button>
       ) : (
         <ControlPanel
-          videoCount={videos.length}
+          itemCount={items.length}
           hasBackground={background !== null}
           reveal={reveal}
-          onAddVideos={handleAddVideos}
+          mediaAccept={MEDIA_ACCEPT}
+          onAddMedia={handleAddMedia}
           onSetBackground={handleSetBackground}
           onRandomizeLayout={handleRandomizeLayout}
           onEnterPresentation={presentation.enter}

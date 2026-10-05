@@ -4,10 +4,10 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
-function VideoTile({
-  video,
+function MediaTile({
+  item,
   rect,
-  onMetadata,
+  onAspectRatio,
   onMove,
   onBringToFront,
   onRemove,
@@ -15,18 +15,15 @@ function VideoTile({
   const dragRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
 
-  function handleLoadedMetadata(event) {
-    const { videoWidth, videoHeight } = event.currentTarget
-    if (videoWidth > 0 && videoHeight > 0) {
-      onMetadata(video.id, videoWidth / videoHeight)
-    }
+  function reportAspectRatio(width, height) {
+    if (width > 0 && height > 0) onAspectRatio(item.id, width / height)
   }
 
   function handlePointerDown(event) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if (event.target.closest('button')) return
     event.preventDefault()
-    onBringToFront(video.id)
+    onBringToFront(item.id)
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = {
       pointerId: event.pointerId,
@@ -45,9 +42,9 @@ function VideoTile({
     const left = clamp(drag.startLeft + event.clientX - drag.startX, 0, rect.maxLeft)
     const top = clamp(drag.startTop + event.clientY - drag.startY, 0, rect.maxTop)
     onMove(
-      video.id,
-      rect.maxLeft > 0 ? left / rect.maxLeft : video.x,
-      rect.maxTop > 0 ? top / rect.maxTop : video.y,
+      item.id,
+      rect.maxLeft > 0 ? left / rect.maxLeft : item.x,
+      rect.maxTop > 0 ? top / rect.maxTop : item.y,
     )
   }
 
@@ -57,38 +54,61 @@ function VideoTile({
     setIsDragging(false)
   }
 
+  const mediaStyle = { aspectRatio: item.aspectRatio }
+
   return (
     <figure
-      className={`video-tile${isDragging ? ' video-tile--dragging' : ''}`}
+      className={`media-tile${isDragging ? ' media-tile--dragging' : ''}`}
       style={{
         width: rect.width,
         left: rect.left,
         top: rect.top,
-        zIndex: video.zIndex,
+        zIndex: item.zIndex,
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
     >
-      <video
-        className="video-tile__video"
-        src={video.url}
-        style={{ aspectRatio: video.aspectRatio }}
-        autoPlay
-        muted
-        loop
-        playsInline
-        disablePictureInPicture
-        onLoadedMetadata={handleLoadedMetadata}
-      />
-      <figcaption className="video-tile__caption">{video.name}</figcaption>
+      {item.type === 'video' ? (
+        <video
+          className="media-tile__media"
+          src={item.url}
+          style={mediaStyle}
+          autoPlay
+          muted
+          loop
+          playsInline
+          disablePictureInPicture
+          onLoadedMetadata={(event) =>
+            reportAspectRatio(
+              event.currentTarget.videoWidth,
+              event.currentTarget.videoHeight,
+            )
+          }
+        />
+      ) : (
+        <img
+          className="media-tile__media"
+          src={item.url}
+          alt={item.name}
+          style={mediaStyle}
+          draggable={false}
+          onLoad={(event) =>
+            reportAspectRatio(
+              event.currentTarget.naturalWidth,
+              event.currentTarget.naturalHeight,
+            )
+          }
+        />
+      )}
+      <figcaption className="media-tile__caption">{item.name}</figcaption>
       <button
         type="button"
-        className="video-tile__remove"
-        aria-label={`Remove ${video.name}`}
-        title={`Remove ${video.name}`}
-        onClick={() => onRemove(video.id)}
+        className="media-tile__remove"
+        aria-label={`Remove ${item.name}`}
+        title={`Remove ${item.name}`}
+        onClick={() => onRemove(item.id)}
       >
         ×
       </button>
@@ -96,4 +116,4 @@ function VideoTile({
   )
 }
 
-export default VideoTile
+export default MediaTile

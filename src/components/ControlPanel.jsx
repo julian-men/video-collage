@@ -1,17 +1,18 @@
 import RevealControls from './RevealControls.jsx'
 
 function ControlPanel({
-  videoCount,
+  itemCount,
   hasBackground,
   reveal,
-  onAddVideos,
+  mediaAccept,
+  onAddMedia,
   onSetBackground,
   onRandomizeLayout,
   onEnterPresentation,
   onClearAll,
 }) {
-  function handleVideoChange(event) {
-    onAddVideos(Array.from(event.target.files))
+  function handleMediaChange(event) {
+    onAddMedia(Array.from(event.target.files))
     // Reset so selecting the same file again still fires a change event.
     event.target.value = ''
   }
@@ -21,19 +22,19 @@ function ControlPanel({
     event.target.value = ''
   }
 
-  const isEmpty = videoCount === 0 && !hasBackground
+  const isEmpty = itemCount === 0 && !hasBackground
 
   return (
     <aside className="control-panel">
       <h1 className="control-panel__title">Video Collage</h1>
 
       <label className="control-panel__field">
-        <span>Videos</span>
+        <span>Videos &amp; images</span>
         <input
           type="file"
-          accept="video/*"
+          accept={mediaAccept}
           multiple
-          onChange={handleVideoChange}
+          onChange={handleMediaChange}
         />
       </label>
 
@@ -46,7 +47,7 @@ function ControlPanel({
         type="button"
         className="control-panel__button"
         onClick={onRandomizeLayout}
-        disabled={videoCount === 0}
+        disabled={itemCount === 0}
       >
         Randomize layout
       </button>
@@ -71,7 +72,7 @@ function ControlPanel({
       </button>
 
       <p className="control-panel__status">
-        {videoCount} video{videoCount === 1 ? '' : 's'}
+        {itemCount} media item{itemCount === 1 ? '' : 's'}
         {hasBackground ? ' · background set' : ''}
       </p>
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import VideoTile from './VideoTile.jsx'
+import MediaTile from './MediaTile.jsx'
 
 function useElementSize(ref) {
   const [size, setSize] = useState({ width: 0, height: 0 })
@@ -19,33 +19,33 @@ function useElementSize(ref) {
   return size
 }
 
-// Converts a video's stored width and 0–1 position into pixels, shrinking it
+// Converts an item's stored width and 0–1 position into pixels, shrinking it
 // (without changing its aspect ratio) if it would not fit the workspace.
-function getTileRect(video, workspace) {
+function getTileRect(item, workspace) {
   const width = Math.max(
     0,
-    Math.min(video.width, workspace.width, workspace.height * video.aspectRatio),
+    Math.min(item.width, workspace.width, workspace.height * item.aspectRatio),
   )
-  const height = width / video.aspectRatio
+  const height = width / item.aspectRatio
   const maxLeft = Math.max(0, workspace.width - width)
   const maxTop = Math.max(0, workspace.height - height)
   return {
     width,
-    left: video.x * maxLeft,
-    top: video.y * maxTop,
+    left: item.x * maxLeft,
+    top: item.y * maxTop,
     maxLeft,
     maxTop,
   }
 }
 
 function Workspace({
-  videos,
+  items,
   showPlaceholder,
   background,
-  onVideoMetadata,
-  onVideoMove,
-  onVideoBringToFront,
-  onVideoRemove,
+  onItemAspectRatio,
+  onItemMove,
+  onItemBringToFront,
+  onItemRemove,
 }) {
   const ref = useRef(null)
   const size = useElementSize(ref)
@@ -58,19 +58,19 @@ function Workspace({
     <main className="workspace" style={style} ref={ref}>
       {showPlaceholder && (
         <p className="workspace__empty">
-          Upload videos from the panel to start your collage.
+          Upload videos or images from the panel to start your collage.
         </p>
       )}
       {size.width > 0 &&
-        videos.map((video) => (
-          <VideoTile
-            key={video.id}
-            video={video}
-            rect={getTileRect(video, size)}
-            onMetadata={onVideoMetadata}
-            onMove={onVideoMove}
-            onBringToFront={onVideoBringToFront}
-            onRemove={onVideoRemove}
+        items.map((item) => (
+          <MediaTile
+            key={item.id}
+            item={item}
+            rect={getTileRect(item, size)}
+            onAspectRatio={onItemAspectRatio}
+            onMove={onItemMove}
+            onBringToFront={onItemBringToFront}
+            onRemove={onItemRemove}
           />
         ))}
     </main>
