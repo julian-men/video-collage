@@ -109,6 +109,14 @@ function App() {
     )
   }
 
+  function handleRemoveVideo(id) {
+    const index = videos.findIndex((video) => video.id === id)
+    if (index === -1) return
+    revoke(videos[index].url)
+    setVideos(videos.filter((video) => video.id !== id))
+    reveal.handleRemoved(index)
+  }
+
   function handleRandomizeLayout() {
     setVideos(videos.map((video) => ({ ...video, ...randomLayout() })))
   }
@@ -158,7 +166,10 @@ function App() {
   })
 
   return (
-    <div className="app" ref={appRef}>
+    <div
+      className={`app${presentation.isPresenting ? ' app--presenting' : ''}`}
+      ref={appRef}
+    >
       <Workspace
         videos={visibleVideos}
         showPlaceholder={videos.length === 0}
@@ -166,6 +177,7 @@ function App() {
         onVideoMetadata={handleVideoMetadata}
         onVideoMove={handleVideoMove}
         onVideoBringToFront={handleBringToFront}
+        onVideoRemove={handleRemoveVideo}
       />
       {presentation.isPresenting ? (
         <button

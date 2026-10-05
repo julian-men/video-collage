@@ -152,6 +152,48 @@
   background: linear-gradient(transparent, rgba(0, 30, 60, 0.75));
 }
 
+.video-tile__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--danger-border);
+  border-radius: 50%;
+  background: var(--gel-danger);
+  box-shadow: var(--shadow-gel);
+  color: var(--text-on-gel);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 2px rgba(60, 0, 0, 0.6);
+  cursor: pointer;
+  opacity: 0.75;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.video-tile:hover .video-tile__remove,
+.video-tile__remove:focus-visible {
+  opacity: 1;
+}
+
+.video-tile__remove:hover {
+  filter: brightness(1.1);
+}
+
+.video-tile__remove:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-gel), var(--focus-ring);
+}
+
+.app--presenting .video-tile__remove {
+  display: none;
+}
+
 /* Shared glass surface */
 
 .control-panel,
@@ -554,6 +596,12 @@ kbd {
 @media (pointer: coarse) {
   .control-panel__button {
     min-height: 44px;
+  }
+
+  .video-tile__remove {
+    width: 34px;
+    height: 34px;
+    opacity: 1;
   }
 
   .reveal-controls__buttons .control-panel__button {

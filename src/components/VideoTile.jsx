@@ -4,7 +4,14 @@ function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
 
-function VideoTile({ video, rect, onMetadata, onMove, onBringToFront }) {
+function VideoTile({
+  video,
+  rect,
+  onMetadata,
+  onMove,
+  onBringToFront,
+  onRemove,
+}) {
   const dragRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -17,6 +24,7 @@ function VideoTile({ video, rect, onMetadata, onMove, onBringToFront }) {
 
   function handlePointerDown(event) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
+    if (event.target.closest('button')) return
     event.preventDefault()
     onBringToFront(video.id)
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -75,6 +83,15 @@ function VideoTile({ video, rect, onMetadata, onMove, onBringToFront }) {
         onLoadedMetadata={handleLoadedMetadata}
       />
       <figcaption className="video-tile__caption">{video.name}</figcaption>
+      <button
+        type="button"
+        className="video-tile__remove"
+        aria-label={`Remove ${video.name}`}
+        title={`Remove ${video.name}`}
+        onClick={() => onRemove(video.id)}
+      >
+        ×
+      </button>
     </figure>
   )
 }

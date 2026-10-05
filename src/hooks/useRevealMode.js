@@ -59,6 +59,16 @@ function useRevealMode(totalCount) {
     setIsPlaying(false)
   }
 
+  // Videos are revealed in list order, so removing a revealed one must shrink
+  // the count; otherwise the next hidden video would appear in its place.
+  function handleRemoved(index) {
+    if (totalCount <= 1) {
+      restoreInitial()
+      return
+    }
+    if (enabled && index < visibleCount) setRevealedCount(visibleCount - 1)
+  }
+
   return {
     enabled,
     intervalSeconds,
@@ -74,6 +84,7 @@ function useRevealMode(totalCount) {
     revealNext,
     reset,
     restoreInitial,
+    handleRemoved,
   }
 }
 

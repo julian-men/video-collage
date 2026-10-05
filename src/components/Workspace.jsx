@@ -45,6 +45,7 @@ function Workspace({
   onVideoMetadata,
   onVideoMove,
   onVideoBringToFront,
+  onVideoRemove,
 }) {
   const ref = useRef(null)
   const size = useElementSize(ref)
@@ -69,6 +70,7 @@ function Workspace({
             onMetadata={onVideoMetadata}
             onMove={onVideoMove}
             onBringToFront={onVideoBringToFront}
+            onRemove={onVideoRemove}
           />
         ))}
     </main>
