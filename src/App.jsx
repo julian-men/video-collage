@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import AboutDialog from './components/AboutDialog.jsx'
 import ControlPanel from './components/ControlPanel.jsx'
+import CreditBar from './components/CreditBar.jsx'
 import ShortcutHelp from './components/ShortcutHelp.jsx'
 import Workspace from './components/Workspace.jsx'
 import useCollageExport from './hooks/useCollageExport.js'
@@ -73,6 +75,7 @@ function App() {
   const [items, setItems] = useState([])
   const [background, setBackground] = useState(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const [isAboutOpen, setIsAboutOpen] = useState(false)
 
   const appRef = useRef(null)
   const presentation = usePresentationMode(appRef)
@@ -178,7 +181,12 @@ function App() {
     reveal.revealNext()
   }
 
-  // Escape is owned by usePresentationMode; here it only closes the help.
+  function handleEnterPresentation() {
+    setIsAboutOpen(false)
+    presentation.enter()
+  }
+
+  // Escape is owned by usePresentationMode; here it only closes dialogs.
   useKeyboardShortcuts({
     ' ': () => {
       if (!reveal.enabled) return false
@@ -197,6 +205,7 @@ function App() {
     '?': () => setIsHelpOpen((open) => !open),
     escape: () => {
       setIsHelpOpen(false)
+      setIsAboutOpen(false)
       return false
     },
   })
@@ -232,12 +241,21 @@ function App() {
           onAddMedia={handleAddMedia}
           onSetBackground={handleSetBackground}
           onRandomizeLayout={handleRandomizeLayout}
-          onEnterPresentation={presentation.enter}
+          onEnterPresentation={handleEnterPresentation}
           isExporting={collageExport.isExporting}
           exportError={collageExport.error}
           onExport={handleExport}
           onClearAll={handleClearAll}
         />
+      )}
+      {!presentation.isPresenting && (
+        <CreditBar
+          isAboutOpen={isAboutOpen}
+          onOpenAbout={() => setIsAboutOpen(true)}
+        />
+      )}
+      {isAboutOpen && !presentation.isPresenting && (
+        <AboutDialog onClose={() => setIsAboutOpen(false)} />
       )}
       {isHelpOpen && <ShortcutHelp onClose={() => setIsHelpOpen(false)} />}
     </div>

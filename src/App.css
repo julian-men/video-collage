@@ -199,7 +199,9 @@
 /* Shared glass surface */
 
 .control-panel,
-.shortcut-help {
+.shortcut-help,
+.about-dialog,
+.credit-bar {
   border: 1px solid var(--glass-border);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -260,7 +262,9 @@
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 1.25rem;
+  padding-right: 44px;
+  font-size: 1.15rem;
+  line-height: 1.2;
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--text);
@@ -604,6 +608,154 @@ kbd {
   font-weight: 700;
 }
 
+/* Credit bar */
+
+.credit-bar {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.credit-bar:hover,
+.credit-bar:focus-within {
+  opacity: 1;
+}
+
+.credit-bar__divider {
+  color: var(--text-muted);
+}
+
+.credit-bar__about {
+  padding: 3px 12px;
+  border: 1px solid #7fb9de;
+  border-radius: var(--radius-pill);
+  background: var(--gel-light);
+  box-shadow: inset 0 1px 0 var(--white), 0 1px 3px rgba(0, 70, 140, 0.2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.credit-bar__about:hover {
+  filter: brightness(1.04) saturate(1.2);
+}
+
+.credit-bar__about:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* About dialog */
+
+.about-dialog {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 30;
+  transform: translate(-50%, -50%);
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100% - 48px);
+  overflow-y: auto;
+  padding: 18px 20px 20px;
+  border-radius: var(--radius-panel);
+  background: linear-gradient(160deg, #ffffff 0%, #eef9ff 100%);
+  color: var(--text);
+}
+
+.about-dialog::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  border-radius: var(--radius-panel) var(--radius-panel) 50% 50% / var(--radius-panel) var(--radius-panel) 20px 20px;
+  background: var(--glass-shine);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.about-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.about-dialog__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-shadow: 0 1px 0 var(--white);
+}
+
+.about-dialog__title::before {
+  content: '';
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #ffffff 0 12%, #9fe7ff 35%, var(--aqua) 70%, var(--aqua-deep) 100%);
+  box-shadow: 0 2px 6px rgba(0, 80, 150, 0.35);
+}
+
+.about-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.about-dialog__body p {
+  margin: 0;
+}
+
+.about-dialog__list {
+  margin: 0;
+  padding: 10px 14px 10px 30px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-card);
+  background: var(--glass-inner-bg);
+  box-shadow: inset 0 1px 0 var(--white);
+}
+
+.about-dialog__list li + li {
+  margin-top: 4px;
+}
+
+.about-dialog__list li::marker {
+  color: var(--green-deep);
+}
+
+.about-dialog__note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.about-dialog__credit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+}
+
 /* Responsive */
 
 @media (pointer: coarse) {
@@ -646,9 +798,15 @@ kbd {
     bottom: 12px;
   }
 
+  .credit-bar {
+    right: 50%;
+    bottom: 10px;
+    transform: translateX(50%);
+  }
+
   .workspace__empty {
     top: auto;
-    bottom: 24px;
+    bottom: 56px;
     transform: translateX(-50%);
     width: calc(100% - 32px);
     font-size: 0.95rem;

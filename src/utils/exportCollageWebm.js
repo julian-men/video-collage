@@ -1,3 +1,5 @@
+import { EXPORT_FILE_NAME } from '../appInfo.js'
+
 const DURATION_MS = 5000
 const STOP_TIMEOUT_MS = 3000
 const IMAGE_TIMEOUT_MS = 5000
@@ -10,8 +12,6 @@ const MIME_TYPES = [
   'video/webm;codecs=vp8',
   'video/webm',
 ]
-const FILE_NAME = 'video-collage.webm'
-
 export class ExportError extends Error {}
 
 function pickMimeType() {
@@ -208,7 +208,7 @@ function downloadBlob(blob) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = FILE_NAME
+  link.download = EXPORT_FILE_NAME
   document.body.appendChild(link)
   link.click()
   link.remove()

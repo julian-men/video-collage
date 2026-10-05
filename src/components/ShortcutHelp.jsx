@@ -3,7 +3,7 @@ const SHORTCUTS = [
   ['→ or N', 'Reveal next item'],
   ['R', 'Reset reveal'],
   ['L', 'Randomize layout'],
-  ['Esc', 'Exit presentation mode'],
+  ['Esc', 'Close dialogs / exit presentation'],
   ['?', 'Toggle this help'],
 ]
 

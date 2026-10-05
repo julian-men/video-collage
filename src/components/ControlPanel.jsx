@@ -1,3 +1,4 @@
+import { APP_NAME } from '../appInfo.js'
 import RevealControls from './RevealControls.jsx'
 
 function ControlPanel({
@@ -33,7 +34,7 @@ function ControlPanel({
 
   return (
     <aside className="control-panel">
-      <h1 className="control-panel__title">Video Collage</h1>
+      <h1 className="control-panel__title">{APP_NAME}</h1>
 
       <label className="control-panel__field">
         <span>Videos &amp; images</span>
