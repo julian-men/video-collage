@@ -3,6 +3,7 @@ import { REVEAL_INTERVAL_OPTIONS } from '../hooks/useRevealMode.js'
 function RevealControls({ reveal }) {
   const {
     enabled,
+    repeat,
     intervalSeconds,
     visibleCount,
     totalCount,
@@ -39,12 +40,21 @@ function RevealControls({ reveal }) {
             </select>
           </label>
 
+          <label className="reveal-controls__toggle">
+            <input
+              type="checkbox"
+              checked={repeat}
+              onChange={(event) => reveal.setRepeat(event.target.checked)}
+            />
+            <span>Repeat reveal</span>
+          </label>
+
           <div className="reveal-controls__buttons">
             <button
               type="button"
               className="control-panel__button control-panel__button--accent"
               onClick={reveal.start}
-              disabled={isRunning || isComplete}
+              disabled={isRunning || totalCount === 0 || (isComplete && !repeat)}
             >
               Start
             </button>
