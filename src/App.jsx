@@ -7,8 +7,10 @@ import ShortcutHelp from './components/ShortcutHelp.jsx'
 import Workspace from './components/Workspace.jsx'
 import useCollageExport from './hooks/useCollageExport.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
+import useMusicSync from './hooks/useMusicSync.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
+import useSoundtrack from './hooks/useSoundtrack.js'
 import {
   MEDIA_ACCEPT,
   SUPPORTED_MEDIA_DESCRIPTION,
@@ -64,6 +66,7 @@ function App() {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [notices, setNotices] = useState([])
+  const [syncEnabled, setSyncEnabled] = useState(false)
 
   const appRef = useRef(null)
   // Cancel functions for in-flight load checks, keyed by item id.
@@ -76,8 +79,18 @@ function App() {
     backgroundRef.current = background
   }, [background])
   const presentation = usePresentationMode(appRef)
-  const reveal = useRevealMode(items.length)
-  const visibleItems = items.slice(0, reveal.visibleCount)
+  const soundtrack = useSoundtrack(pushNotice)
+  const reveal = useRevealMode(items.length, {
+    suspended:
+      syncEnabled && soundtrack.track !== null && soundtrack.bpm !== null,
+  })
+  const sync = useMusicSync(soundtrack, {
+    enabled: syncEnabled && reveal.enabled,
+    totalCount: items.length,
+    repeat: reveal.repeat,
+  })
+  const visibleCount = sync.isActive ? sync.visibleCount : reveal.visibleCount
+  const visibleItems = items.slice(0, visibleCount)
   const collageExport = useCollageExport()
 
   // Tracks every live object URL so they can be revoked when the app unmounts.
@@ -269,6 +282,20 @@ function App() {
     setBackground(null)
     setNotices((current) => current.filter((notice) => !notice.itemId))
     reveal.restoreInitial()
+    handleRemoveSoundtrack()
+  }
+
+  function handleToggleSync(next) {
+    setSyncEnabled(next)
+    if (next) {
+      reveal.pause()
+      sync.armIfStarted()
+    }
+  }
+
+  function handleRemoveSoundtrack() {
+    soundtrack.remove()
+    setSyncEnabled(false)
   }
 
   function handleExport() {
@@ -279,8 +306,10 @@ function App() {
     })
   }
 
+  // Manual advancing is off while synced so the music position alone decides
+  // what is shown.
   function handleRevealNext() {
-    if (!reveal.enabled) return false
+    if (!reveal.enabled || sync.isActive) return false
     reveal.revealNext()
   }
 
@@ -293,13 +322,15 @@ function App() {
   useKeyboardShortcuts({
     ' ': () => {
       if (!reveal.enabled) return false
-      reveal.toggle()
+      if (sync.isActive) sync.toggle()
+      else reveal.toggle()
     },
     arrowright: handleRevealNext,
     n: handleRevealNext,
     r: () => {
       if (!reveal.enabled) return false
-      reveal.reset()
+      if (sync.isActive) sync.reset()
+      else reveal.reset()
     },
     l: () => {
       if (items.length === 0) return false
@@ -341,6 +372,13 @@ function App() {
           itemCount={items.length}
           hasBackground={background !== null}
           reveal={reveal}
+          sync={sync}
+          syncEnabled={syncEnabled}
+          visibleCount={visibleCount}
+          onToggleSync={handleToggleSync}
+          soundtrack={soundtrack}
+          onLoadSoundtrack={soundtrack.load}
+          onRemoveSoundtrack={handleRemoveSoundtrack}
           mediaAccept={MEDIA_ACCEPT}
           onAddMedia={handleAddMedia}
           onSetBackground={handleSetBackground}

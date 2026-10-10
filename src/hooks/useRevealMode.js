@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 
 export const REVEAL_INTERVAL_OPTIONS = [1, 3, 5, 10]
 
-function useRevealMode(totalCount) {
+// `suspended` stops the interval timer while another clock (music sync)
+// drives the reveal.
+function useRevealMode(totalCount, { suspended = false } = {}) {
   const [enabled, setEnabled] = useState(false)
   const [intervalSeconds, setIntervalSeconds] = useState(3)
   const [revealedCount, setRevealedCount] = useState(0)
@@ -14,7 +16,11 @@ function useRevealMode(totalCount) {
   const visibleCount = enabled ? Math.min(revealedCount, totalCount) : totalCount
   const isComplete = visibleCount >= totalCount
   const isRunning =
-    enabled && isPlaying && totalCount > 0 && (repeat || !isComplete)
+    !suspended &&
+    enabled &&
+    isPlaying &&
+    totalCount > 0 &&
+    (repeat || !isComplete)
   // Only repeat mode needs the total inside the timer; without it, uploads
   // must not restart the countdown.
   const repeatTotal = repeat ? totalCount : null

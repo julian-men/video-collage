@@ -1,7 +1,7 @@
 const SHORTCUTS = [
-  ['Space', 'Start / pause reveal'],
-  ['→ or N', 'Reveal next item'],
-  ['R', 'Reset reveal'],
+  ['Space', 'Start / pause reveal (plays / pauses music when synced)'],
+  ['→ or N', 'Reveal next item (off while synced to music)'],
+  ['R', 'Reset reveal (rewinds music when synced)'],
   ['L', 'Randomize layout'],
   ['Esc', 'Close dialogs / exit presentation'],
   ['?', 'Toggle this help'],

@@ -1,10 +1,18 @@
 import { APP_NAME } from '../appInfo.js'
 import RevealControls from './RevealControls.jsx'
+import SoundtrackControls from './SoundtrackControls.jsx'
 
 function ControlPanel({
   itemCount,
   hasBackground,
   reveal,
+  sync,
+  syncEnabled,
+  visibleCount,
+  onToggleSync,
+  soundtrack,
+  onLoadSoundtrack,
+  onRemoveSoundtrack,
   mediaAccept,
   onAddMedia,
   onSetBackground,
@@ -26,7 +34,8 @@ function ControlPanel({
     event.target.value = ''
   }
 
-  const isEmpty = itemCount === 0 && !hasBackground
+  const hasSoundtrack = soundtrack.track !== null || soundtrack.pendingName !== null
+  const isEmpty = itemCount === 0 && !hasBackground && !hasSoundtrack
 
   let exportHint = 'Record a 5-second WebM of the collage'
   if (reveal.enabled) exportHint = 'Turn off Reveal mode to export'
@@ -51,6 +60,15 @@ function ControlPanel({
         <input type="file" accept="image/*" onChange={handleBackgroundChange} />
       </label>
 
+      <SoundtrackControls
+        soundtrack={soundtrack}
+        onLoad={onLoadSoundtrack}
+        onRemove={onRemoveSoundtrack}
+        onPlay={sync.start}
+        onPause={sync.pause}
+        onSeek={sync.seek}
+      />
+
       <button
         type="button"
         className="control-panel__button"
@@ -60,7 +78,13 @@ function ControlPanel({
         Randomize layout
       </button>
 
-      <RevealControls reveal={reveal} />
+      <RevealControls
+        reveal={reveal}
+        sync={sync}
+        syncEnabled={syncEnabled}
+        visibleCount={visibleCount}
+        onToggleSync={onToggleSync}
+      />
 
       <button
         type="button"
@@ -99,6 +123,7 @@ function ControlPanel({
       <p className="control-panel__status">
         {itemCount} media item{itemCount === 1 ? '' : 's'}
         {hasBackground ? ' · background set' : ''}
+        {soundtrack.track ? ' · soundtrack set' : ''}
       </p>
 
       <p className="control-panel__status">
