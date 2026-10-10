@@ -99,7 +99,7 @@ function SoundtrackControls({ soundtrack, onLoad, onRemove, onPlay, onPause, onS
               <span>
                 Estimated tempo: <strong>{detectedBpm.toFixed(1)} BPM</strong>
                 {isLowConfidence
-                  ? ' — low confidence, please check the BPM below.'
+                  ? ' — please check the BPM below if it seems off.'
                   : ''}
               </span>
             )}
