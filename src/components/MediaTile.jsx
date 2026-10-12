@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { NO_VIDEO_PICTURE_MESSAGE, describeLoadError } from '../utils/mediaFiles.js'
 
+const MIN_RESIZE_WIDTH = 80
+
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
 }
@@ -10,12 +12,15 @@ function MediaTile({
   rect,
   onAspectRatio,
   onMove,
+  onResize,
   onBringToFront,
   onRemove,
   onLoadError,
 }) {
   const dragRef = useRef(null)
+  const resizeRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
 
   function reportAspectRatio(width, height) {
     if (width > 0 && height > 0) onAspectRatio(item.id, width / height)
@@ -23,7 +28,7 @@ function MediaTile({
 
   function handlePointerDown(event) {
     if (event.pointerType === 'mouse' && event.button !== 0) return
-    if (event.target.closest('button')) return
+    if (event.target.closest('button, .media-tile__resize')) return
     event.preventDefault()
     onBringToFront(item.id)
     event.currentTarget.setPointerCapture(event.pointerId)
@@ -56,11 +61,71 @@ function MediaTile({
     setIsDragging(false)
   }
 
+  function handleResizeStart(event) {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    event.preventDefault()
+    event.stopPropagation()
+    onBringToFront(item.id)
+    event.currentTarget.setPointerCapture(event.pointerId)
+    resizeRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: rect.width,
+      startLeft: rect.left,
+      startTop: rect.top,
+    }
+    setIsResizing(true)
+  }
+
+  // Only the width is stored; the height always follows the aspect ratio. The
+  // top-left corner stays put unless the minimum size forces it inward.
+  function handleResizeMove(event) {
+    const resize = resizeRef.current
+    if (!resize || resize.pointerId !== event.pointerId) return
+    event.stopPropagation()
+
+    const aspect = item.aspectRatio
+    const { workspaceWidth, workspaceHeight } = rect
+    const startHeight = resize.startWidth / aspect
+    const proposed = Math.max(
+      resize.startWidth + event.clientX - resize.startX,
+      (startHeight + event.clientY - resize.startY) * aspect,
+    )
+    const fitWidth = Math.min(workspaceWidth, workspaceHeight * aspect)
+    const minWidth = Math.min(MIN_RESIZE_WIDTH, fitWidth)
+    const maxWidth = Math.min(
+      workspaceWidth - resize.startLeft,
+      (workspaceHeight - resize.startTop) * aspect,
+    )
+    const width = clamp(proposed, minWidth, Math.max(maxWidth, minWidth))
+    const height = width / aspect
+    const maxLeft = Math.max(0, workspaceWidth - width)
+    const maxTop = Math.max(0, workspaceHeight - height)
+    const left = Math.min(resize.startLeft, maxLeft)
+    const top = Math.min(resize.startTop, maxTop)
+    onResize(
+      item.id,
+      width,
+      maxLeft > 0 ? left / maxLeft : 0,
+      maxTop > 0 ? top / maxTop : 0,
+    )
+  }
+
+  function handleResizeEnd(event) {
+    if (resizeRef.current?.pointerId !== event.pointerId) return
+    event.stopPropagation()
+    resizeRef.current = null
+    setIsResizing(false)
+  }
+
   const mediaStyle = { aspectRatio: item.aspectRatio }
 
   return (
     <figure
-      className={`media-tile${isDragging ? ' media-tile--dragging' : ''}`}
+      className={`media-tile${isDragging ? ' media-tile--dragging' : ''}${
+        isResizing ? ' media-tile--resizing' : ''
+      }`}
       style={{
         width: rect.width,
         left: rect.left,
@@ -135,6 +200,15 @@ function MediaTile({
       >
         ×
       </button>
+      <span
+        className="media-tile__resize"
+        aria-hidden="true"
+        title={`Resize ${item.name}`}
+        onPointerDown={handleResizeStart}
+        onPointerMove={handleResizeMove}
+        onPointerUp={handleResizeEnd}
+        onPointerCancel={handleResizeEnd}
+      />
     </figure>
   )
 }

@@ -221,6 +221,12 @@ function App() {
     )
   }
 
+  function handleResize(id, width, x, y) {
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, width, x, y } : item)),
+    )
+  }
+
   function handleRemove(id) {
     const index = items.findIndex((item) => item.id === id)
     if (index === -1) return
@@ -355,6 +361,7 @@ function App() {
         background={background}
         onItemAspectRatio={handleAspectRatio}
         onItemMove={handleMove}
+        onItemResize={handleResize}
         onItemBringToFront={handleBringToFront}
         onItemRemove={handleRemove}
         onItemLoadError={handleItemLoadError}

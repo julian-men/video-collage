@@ -35,6 +35,8 @@ function getTileRect(item, workspace) {
     top: item.y * maxTop,
     maxLeft,
     maxTop,
+    workspaceWidth: workspace.width,
+    workspaceHeight: workspace.height,
   }
 }
 
@@ -44,6 +46,7 @@ function Workspace({
   background,
   onItemAspectRatio,
   onItemMove,
+  onItemResize,
   onItemBringToFront,
   onItemRemove,
   onItemLoadError,
@@ -70,6 +73,7 @@ function Workspace({
             rect={getTileRect(item, size)}
             onAspectRatio={onItemAspectRatio}
             onMove={onItemMove}
+            onResize={onItemResize}
             onBringToFront={onItemBringToFront}
             onRemove={onItemRemove}
             onLoadError={onItemLoadError}
