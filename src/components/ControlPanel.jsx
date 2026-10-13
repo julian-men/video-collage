@@ -1,4 +1,5 @@
 import { APP_NAME } from '../appInfo.js'
+import { EXPORT_QUALITIES } from '../utils/exportCollageWebm.js'
 import RevealControls from './RevealControls.jsx'
 import SoundtrackControls from './SoundtrackControls.jsx'
 
@@ -18,6 +19,8 @@ function ControlPanel({
   onSetBackground,
   onRandomizeLayout,
   onEnterPresentation,
+  exportQuality,
+  onExportQualityChange,
   isExporting,
   exportError,
   onExport,
@@ -37,7 +40,11 @@ function ControlPanel({
   const hasSoundtrack = soundtrack.track !== null || soundtrack.pendingName !== null
   const isEmpty = itemCount === 0 && !hasBackground && !hasSoundtrack
 
-  let exportHint = 'Record a 5-second WebM of the collage'
+  const quality = EXPORT_QUALITIES[exportQuality]
+  const qualitySummary = `${quality.label}: up to ${quality.maxWidth}×${quality.maxHeight}, ${
+    quality.videoBitsPerSecond / 1_000_000
+  } Mbps`
+  let exportHint = `Record a 5-second WebM of the collage (${qualitySummary})`
   if (reveal.enabled) exportHint = 'Turn off Reveal mode to export'
   else if (itemCount === 0) exportHint = 'Add media to export'
 
@@ -93,6 +100,25 @@ function ControlPanel({
       >
         Enter presentation mode
       </button>
+
+      <label className="reveal-controls__interval export-quality">
+        <span>Export quality</span>
+        <select
+          value={exportQuality}
+          onChange={(event) => onExportQualityChange(event.target.value)}
+          disabled={isExporting}
+          aria-describedby="export-quality-summary"
+        >
+          {Object.entries(EXPORT_QUALITIES).map(([value, preset]) => (
+            <option key={value} value={value}>
+              {preset.label} ({preset.maxHeight}p)
+            </option>
+          ))}
+        </select>
+      </label>
+      <p id="export-quality-summary" className="control-panel__status">
+        {qualitySummary} · 5 seconds · silent
+      </p>
 
       <button
         type="button"

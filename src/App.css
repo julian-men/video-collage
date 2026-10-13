@@ -523,6 +523,21 @@
   box-shadow: var(--focus-ring);
 }
 
+.export-quality {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.export-quality select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.export-quality + .control-panel__status {
+  margin-top: -6px;
+}
+
 .reveal-controls__buttons {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -4,9 +4,21 @@ const DURATION_MS = 5000
 const STOP_TIMEOUT_MS = 3000
 const IMAGE_TIMEOUT_MS = 5000
 const FRAME_RATE = 30
-const MAX_WIDTH = 1280
-const MAX_HEIGHT = 720
-const VIDEO_BITS_PER_SECOND = 8_000_000
+export const EXPORT_QUALITIES = {
+  standard: {
+    label: 'Standard',
+    maxWidth: 1280,
+    maxHeight: 720,
+    videoBitsPerSecond: 8_000_000,
+  },
+  high: {
+    label: 'High',
+    maxWidth: 1920,
+    maxHeight: 1080,
+    videoBitsPerSecond: 16_000_000,
+  },
+}
+export const DEFAULT_EXPORT_QUALITY = 'high'
 const MIME_TYPES = [
   'video/webm;codecs=vp9',
   'video/webm;codecs=vp8',
@@ -201,8 +213,26 @@ function drawTiles(ctx, tiles) {
   }
 }
 
+// Rounds down so the canvas never exceeds the preset's maximum.
 function evenSize(value) {
-  return Math.max(2, Math.round(value / 2) * 2)
+  return Math.max(2, Math.floor(value / 2) * 2)
+}
+
+/**
+ * Largest even-sized canvas that fits inside the preset's bounds with the
+ * workspace's own aspect ratio. Small workspaces are scaled up, so videos and
+ * images are drawn from their full-resolution elements at the export size.
+ */
+export function exportCanvasSize(workspaceWidth, workspaceHeight, quality) {
+  const preset = EXPORT_QUALITIES[quality] ?? EXPORT_QUALITIES[DEFAULT_EXPORT_QUALITY]
+  const scale = Math.min(
+    preset.maxWidth / workspaceWidth,
+    preset.maxHeight / workspaceHeight,
+  )
+  return {
+    width: evenSize(workspaceWidth * scale),
+    height: evenSize(workspaceHeight * scale),
+  }
 }
 
 function downloadBlob(blob) {
@@ -217,7 +247,12 @@ function downloadBlob(blob) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export async function exportCollageWebm({ workspace, background }) {
+export async function exportCollageWebm({
+  workspace,
+  background,
+  quality = DEFAULT_EXPORT_QUALITY,
+}) {
+  const preset = EXPORT_QUALITIES[quality] ?? EXPORT_QUALITIES[DEFAULT_EXPORT_QUALITY]
   const mimeType = pickMimeType()
   const canvas = document.createElement('canvas')
   if (!mimeType || typeof canvas.captureStream !== 'function') {
@@ -232,13 +267,15 @@ export async function exportCollageWebm({ workspace, background }) {
 
   const { width: workspaceWidth, height: workspaceHeight } =
     workspace.getBoundingClientRect()
-  const scale = Math.min(1, MAX_WIDTH / workspaceWidth, MAX_HEIGHT / workspaceHeight)
-  canvas.width = evenSize(workspaceWidth * scale)
-  canvas.height = evenSize(workspaceHeight * scale)
+  const size = exportCanvasSize(workspaceWidth, workspaceHeight, quality)
+  canvas.width = size.width
+  canvas.height = size.height
 
   const backgroundImage = background ? await loadImage(background.url) : null
 
   const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
   function drawFrame() {
     ctx.setTransform(
       canvas.width / workspaceWidth,
@@ -267,7 +304,7 @@ export async function exportCollageWebm({ workspace, background }) {
     stream = canvas.captureStream(FRAME_RATE)
     recorder = new MediaRecorder(stream, {
       mimeType,
-      videoBitsPerSecond: VIDEO_BITS_PER_SECOND,
+      videoBitsPerSecond: preset.videoBitsPerSecond,
     })
     const activeRecorder = recorder
 

@@ -57,7 +57,7 @@ npm run build
 3. Drag tiles to arrange them, or press **Randomize layout** to shuffle them.
 4. Turn on **Reveal mode** to show items one by one. Choose an interval, then press **Start**. Turn on **Repeat reveal** to loop the sequence.
 5. Press **Enter presentation mode** to show the collage fullscreen without the controls.
-6. With Reveal mode off, press **Export WebM** to download `multimedia-collage-maker.webm`.
+6. With Reveal mode off, pick an **Export quality** (High by default) and press **Export WebM** to download `multimedia-collage-maker.webm`.
 
 ### Revealing on the beat
 
@@ -93,7 +93,15 @@ Shortcuts are ignored while typing in a form field and when Ctrl, Cmd, or Alt is
 
 ## Export limitations
 
-- Export length is fixed at **five seconds**. It records at 30 fps, at up to 1280×720 (scaled from the workspace's proportions), using the VP9 codec, or VP8 if VP9 isn't supported.
+- Export length is fixed at **five seconds**, recorded at 30 fps with the VP9 codec, or VP8 if VP9 isn't supported.
+- **Export quality** is chosen next to the Export WebM button, and the selected setting is shown under the selector:
+
+  | Quality | Maximum size | Bitrate |
+  | --- | --- | --- |
+  | **High** (default) | 1920×1080 | 16 Mbps |
+  | Standard | 1280×720 | 8 Mbps |
+
+  The video keeps the workspace's own aspect ratio; it is scaled to the largest even-numbered size that fits inside the maximum, never stretched or cropped to 16:9. For example, a 1400×900 workspace exports at 1680×1080 on High. Videos and images are drawn from their original files at that size with high-quality smoothing, so detail beyond the on-screen tile size is kept. The bitrate is a target, and browsers may use less for simple scenes.
 - Exports are silent: collage videos are muted, and the soundtrack is not included.
 - Export is disabled while Reveal mode is on or when there's no media, and isn't available in presentation mode.
 - The layout is captured when export starts. Videos are recorded from wherever they are in playback at that moment.

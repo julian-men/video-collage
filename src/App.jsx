@@ -11,6 +11,7 @@ import useMusicSync from './hooks/useMusicSync.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
 import useSoundtrack from './hooks/useSoundtrack.js'
+import { DEFAULT_EXPORT_QUALITY } from './utils/exportCollageWebm.js'
 import {
   MEDIA_ACCEPT,
   SUPPORTED_MEDIA_DESCRIPTION,
@@ -67,6 +68,7 @@ function App() {
   const [isAboutOpen, setIsAboutOpen] = useState(false)
   const [notices, setNotices] = useState([])
   const [syncEnabled, setSyncEnabled] = useState(false)
+  const [exportQuality, setExportQuality] = useState(DEFAULT_EXPORT_QUALITY)
 
   const appRef = useRef(null)
   // Cancel functions for in-flight load checks, keyed by item id.
@@ -309,6 +311,7 @@ function App() {
     collageExport.exportWebm({
       workspace: appRef.current?.querySelector('.workspace'),
       background,
+      quality: exportQuality,
     })
   }
 
@@ -391,6 +394,8 @@ function App() {
           onSetBackground={handleSetBackground}
           onRandomizeLayout={handleRandomizeLayout}
           onEnterPresentation={handleEnterPresentation}
+          exportQuality={exportQuality}
+          onExportQualityChange={setExportQuality}
           isExporting={collageExport.isExporting}
           exportError={collageExport.error}
           onExport={handleExport}
