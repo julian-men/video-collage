@@ -105,6 +105,8 @@ function useMusicSync(soundtrack, { enabled, totalCount, repeat }) {
     isActive,
     isPlaying: soundtrack.isPlaying,
     isArmed,
+    anchor,
+    bpm,
     beatsPerReveal,
     visibleCount,
     armIfStarted,

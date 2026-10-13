@@ -44,7 +44,7 @@ function AboutDialog({ onClose }) {
           <li>Arrange items by dragging, or randomize the whole layout.</li>
           <li>Reveal items one at a time, with an optional repeat cycle.</li>
           <li>Present the collage fullscreen with keyboard controls.</li>
-          <li>Export a 5-second WebM video of the current collage.</li>
+          <li>Export an MP4 or WebM of the collage or the reveal sequence, including the soundtrack when synced to music.</li>
           <li>Inspired by Baby Keem and M2AF</li>
         </ul>
         <p className="about-dialog__note">

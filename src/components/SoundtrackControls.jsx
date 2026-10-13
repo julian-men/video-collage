@@ -1,12 +1,7 @@
 import { MAX_OFFSET_MS } from '../hooks/useSoundtrack.js'
 import { SOUNDTRACK_ACCEPT } from '../utils/audioFiles.js'
 import { MAX_BPM, MIN_BPM } from '../utils/beatSync.js'
-
-function formatTime(seconds) {
-  const whole = Math.max(0, Math.floor(seconds))
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`
-}
-
+import { formatTime } from '../utils/formatTime.js'
 function SoundtrackControls({ soundtrack, onLoad, onRemove, onPlay, onPause, onSeek }) {
   const {
     track,

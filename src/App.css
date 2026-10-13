@@ -534,8 +534,25 @@
   cursor: not-allowed;
 }
 
-.export-quality + .control-panel__status {
+.export-quality + .control-panel__status,
+.export-quality + .export-notes {
   margin-top: -6px;
+}
+
+.export-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-panel__warning {
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(176, 120, 0, 0.4);
+  border-radius: var(--radius-card);
+  background: rgba(255, 246, 214, 0.9);
+  color: #6b4a00;
+  font-size: 0.78rem;
 }
 
 .reveal-controls__buttons {

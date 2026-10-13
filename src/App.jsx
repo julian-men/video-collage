@@ -11,7 +11,11 @@ import useMusicSync from './hooks/useMusicSync.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
 import useSoundtrack from './hooks/useSoundtrack.js'
-import { DEFAULT_EXPORT_QUALITY } from './utils/exportCollageWebm.js'
+import {
+  DEFAULT_EXPORT_QUALITY,
+  defaultExportFormat,
+  getExportFormatSupport,
+} from './utils/exportCollageVideo.js'
 import {
   MEDIA_ACCEPT,
   SUPPORTED_MEDIA_DESCRIPTION,
@@ -19,6 +23,7 @@ import {
   validateBackgroundFile,
   validateMediaFile,
 } from './utils/mediaFiles.js'
+import { itemsShownBefore } from './utils/revealTimeline.js'
 import './App.css'
 
 const MIN_ITEM_WIDTH = 240
@@ -69,6 +74,12 @@ function App() {
   const [notices, setNotices] = useState([])
   const [syncEnabled, setSyncEnabled] = useState(false)
   const [exportQuality, setExportQuality] = useState(DEFAULT_EXPORT_QUALITY)
+  // Recorder support can't change during a session, so it's checked once.
+  const [exportSupport] = useState(getExportFormatSupport)
+  const [exportFormat, setExportFormat] = useState(() =>
+    defaultExportFormat(exportSupport),
+  )
+  const [exportLength, setExportLength] = useState('short')
 
   const appRef = useRef(null)
   // Cancel functions for in-flight load checks, keyed by item id.
@@ -94,6 +105,33 @@ function App() {
   const visibleCount = sync.isActive ? sync.visibleCount : reveal.visibleCount
   const visibleItems = items.slice(0, visibleCount)
   const collageExport = useCollageExport()
+  // 'collage' records the tiles as shown; the reveal modes replay the sequence.
+  let exportMode = 'collage'
+  if (reveal.enabled) exportMode = sync.isActive ? 'sync' : 'interval'
+  // Full soundtrack is only offered for a music-synchronized reveal that has
+  // a decoded track and a valid BPM; everything else records five seconds.
+  const fullLengthAvailable =
+    reveal.enabled &&
+    sync.isActive &&
+    soundtrack.track !== null &&
+    soundtrack.bpm !== null &&
+    soundtrack.duration > 0
+  const effectiveExportLength = fullLengthAvailable ? exportLength : 'short'
+  const isFullExport = effectiveExportLength === 'full'
+  // A repeating reveal only has a natural end when the song provides one.
+  const exportBlockedByRepeat = reveal.enabled && reveal.repeat && !isFullExport
+  const syncTimeline = sync.isActive
+    ? {
+        kind: 'beats',
+        anchor: sync.anchor,
+        bpm: sync.bpm,
+        beatsPerReveal: sync.beatsPerReveal,
+        repeat: isFullExport && reveal.repeat,
+      }
+    : null
+  const fullExportCoverage = isFullExport
+    ? itemsShownBefore(syncTimeline, soundtrack.duration, items.length)
+    : null
 
   // Tracks every live object URL so they can be revoked when the app unmounts.
   const liveUrls = useRef(new Set())
@@ -307,12 +345,40 @@ function App() {
   }
 
   function handleExport() {
-    if (reveal.enabled || items.length === 0) return
-    collageExport.exportWebm({
+    if (items.length === 0 || exportBlockedByRepeat) return
+    // Snapshot of the current settings; later changes don't affect the export.
+    let revealExport = null
+    if (exportMode === 'sync') {
+      revealExport = {
+        items,
+        timeline: syncTimeline,
+        soundtrackUrl: soundtrack.track.url,
+      }
+    } else if (exportMode === 'interval') {
+      revealExport = {
+        items,
+        timeline: { kind: 'interval', intervalSeconds: reveal.intervalSeconds },
+        soundtrackUrl: null,
+      }
+    }
+    collageExport.exportVideo({
       workspace: appRef.current?.querySelector('.workspace'),
       background,
       quality: exportQuality,
+      format: exportFormat,
+      reveal: revealExport,
+      length: effectiveExportLength,
     })
+  }
+
+  function handleExportFormatChange(format) {
+    setExportFormat(format)
+    collageExport.clearError()
+  }
+
+  function handleExportLengthChange(length) {
+    setExportLength(length)
+    collageExport.clearError()
   }
 
   // Manual advancing is off while synced so the music position alone decides
@@ -396,9 +462,22 @@ function App() {
           onEnterPresentation={handleEnterPresentation}
           exportQuality={exportQuality}
           onExportQualityChange={setExportQuality}
+          exportFormat={exportFormat}
+          exportSupport={exportSupport}
+          exportMode={exportMode}
+          exportBlockedByRepeat={exportBlockedByRepeat}
+          onExportFormatChange={handleExportFormatChange}
+          exportLength={effectiveExportLength}
+          onExportLengthChange={handleExportLengthChange}
+          fullLengthAvailable={fullLengthAvailable}
+          soundtrackDuration={soundtrack.duration}
+          fullExportCoverage={fullExportCoverage}
           isExporting={collageExport.isExporting}
+          exportProgress={collageExport.progress}
+          exportCancelled={collageExport.wasCancelled}
           exportError={collageExport.error}
           onExport={handleExport}
+          onCancelExport={collageExport.cancel}
           onClearAll={handleClearAll}
         />
       )}
