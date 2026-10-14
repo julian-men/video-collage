@@ -41,10 +41,11 @@ function AboutDialog({ onClose }) {
         </p>
         <ul className="about-dialog__list">
           <li>Upload videos and images, plus an optional background image.</li>
-          <li>Arrange items by dragging, or randomize the whole layout.</li>
-          <li>Reveal items one at a time, with an optional repeat cycle.</li>
+          <li>Arrange and resize items, or randomize the whole layout.</li>
+          <li>Reveal items on a timer or in sync with an MP3 soundtrack.</li>
+          <li>Repeat the reveal sequence for as long as the music plays.</li>
           <li>Present the collage fullscreen with keyboard controls.</li>
-          <li>Export an MP4 or WebM of the collage or the reveal sequence, including the soundtrack when synced to music.</li>
+          <li>Export five seconds or the full soundtrack as MP4 or WebM.</li>
           <li>Inspired by Baby Keem and M2AF</li>
         </ul>
         <p className="about-dialog__note">

@@ -6,7 +6,7 @@ A browser-based collage tool for arranging videos and images on a full-screen wo
 
 - **Video and image uploads.** Add several videos and images at once. Videos autoplay muted, loop, and play inline without controls. Images appear as static tiles.
 - **Separate background image.** Set an image behind the collage. The background is kept apart from the collage media. Without one, the workspace shows a sky, cloud, and bubble scene drawn in CSS.
-- **Random layout and manual dragging.** New media lands in random positions at random widths (240–480 px). Tiles keep their aspect ratio and always stay upright inside the workspace. **Randomize layout** shuffles every tile. You can drag any tile with a mouse, touch, or pen. Positions are stored relative to the workspace, so the layout scales when the window is resized or goes fullscreen.
+- **Random layout, dragging, and resizing.** New media lands in random positions at random widths (240–480 px). Tiles keep their aspect ratio and always stay upright inside the workspace. **Randomize layout** shuffles every tile. You can drag a tile or resize it from its lower-right corner with a mouse, touch, or pen. Positions and sizes scale when the window is resized or goes fullscreen.
 - **Bring-to-front stacking.** Pressing a tile moves it to the top and it stays there. New uploads appear above existing media, and randomizing keeps the current stacking order.
 - **Per-item removal.** Each tile has a remove button. **Clear all media** removes every item, the background, and the soundtrack.
 - **Reveal mode and repeat reveal.** Shows items one at a time in upload order, at 1, 3, 5, or 10 second intervals. Start, Pause, and Reset are available, and a counter reads "N of M media items revealed". With **Repeat reveal** on, the sequence loops (1 → 2 → … → all → none → 1 …) until it's paused, reset, or turned off.
@@ -54,7 +54,7 @@ npm run build
 
 1. Use **Videos & images** to choose one or more files. They appear in random positions.
 2. Optionally choose a **Background image**.
-3. Drag tiles to arrange them, or press **Randomize layout** to shuffle them.
+3. Drag tiles to arrange them, resize them from the lower-right corner, or press **Randomize layout** to shuffle them.
 4. Turn on **Reveal mode** to show items one by one. Choose an interval, then press **Start**. Turn on **Repeat reveal** to loop the sequence.
 5. Press **Enter presentation mode** to show the collage fullscreen without the controls.
 6. Pick an **Export format** and **Export quality** (High by default). With a music-synchronized reveal you can also pick **Export length** (five seconds, or the full soundtrack). Press **Export MP4** or **Export WebM**. The file downloads as `multimedia-collage-maker.mp4` or `multimedia-collage-maker.webm`. With Reveal mode on, the export records the reveal sequence from the beginning (see [Exporting a reveal](#exporting-a-reveal)).
@@ -157,12 +157,12 @@ Everything stays in your browser. Uploaded files are opened locally with tempora
 
 - Nothing is saved. Reloading the page clears the collage.
 - There's no undo.
-- Tiles can overlap. Their size is set randomly and can't be resized or rotated by hand.
+- Tiles can overlap. They can be resized but can't be rotated by hand.
 - Items hidden by Reveal mode restart from the beginning when they're revealed.
 - While the browser is in true fullscreen, the browser uses Escape to exit fullscreen, so the shortcut help card may need its close button instead.
 - Video playback depends on the browser and the file's codec, and MP4 or WebM export depends on which formats the browser can record.
 - BPM detection is approximate and assumes one steady tempo. It does not reliably follow recordings whose tempo changes (live performances, rubato, tempo ramps, DJ transitions), and it can lock onto half or double the felt tempo. Long songs drift if the BPM is even slightly off, so correct it by hand when needed.
-- Only one soundtrack is supported, and it doesn't loop or get saved.
+- Only one soundtrack is supported, and it doesn't loop.
 - Synchronized reveals update on beat boundaries and playback events. In a background tab, browsers throttle timers, so reveals catch up when the tab is shown again.
 
 ## Credits
