@@ -7,6 +7,7 @@ import {
 } from '../utils/exportCollageVideo.js'
 import { formatTime } from '../utils/formatTime.js'
 import RevealControls from './RevealControls.jsx'
+import RevealOrderList from './RevealOrderList.jsx'
 import SoundtrackControls from './SoundtrackControls.jsx'
 
 const RECOMMEND_STANDARD_SECONDS = 60
@@ -19,7 +20,8 @@ function formatMegabytes(bytes) {
 }
 
 function ControlPanel({
-  itemCount,
+  items,
+  onReorder,
   hasBackground,
   reveal,
   sync,
@@ -69,6 +71,7 @@ function ControlPanel({
     event.target.value = ''
   }
 
+  const itemCount = items.length
   const hasSoundtrack = soundtrack.track !== null || soundtrack.pendingName !== null
   const isEmpty = itemCount === 0 && !hasBackground && !hasSoundtrack
 
@@ -241,6 +244,8 @@ function ControlPanel({
         visibleCount={visibleCount}
         onToggleSync={onToggleSync}
       />
+
+      <RevealOrderList items={items} onMove={onReorder} />
 
       <button
         type="button"

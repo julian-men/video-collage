@@ -351,7 +351,8 @@ function App() {
         </button>
       ) : (
         <ControlPanel
-          itemCount={items.length}
+          items={items}
+          onReorder={media.reorder}
           hasBackground={background !== null}
           reveal={reveal}
           sync={sync}

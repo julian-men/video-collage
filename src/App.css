@@ -1166,3 +1166,31 @@ kbd {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
+.reveal-order summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.reveal-order__list {
+  display: grid;
+  gap: 4px;
+  max-height: 220px;
+  margin: 8px 0 0;
+  padding-left: 1.6em;
+  overflow-y: auto;
+}
+
+.reveal-order__item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.reveal-order__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}

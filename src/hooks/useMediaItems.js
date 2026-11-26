@@ -6,6 +6,7 @@ import {
   referencedIds,
   undo as undoStep,
 } from '../utils/history.js'
+import { moveItem } from '../utils/itemOrder.js'
 import { probeMedia, validateMediaFile } from '../utils/mediaFiles.js'
 
 const MIN_ITEM_WIDTH = 240
@@ -238,6 +239,7 @@ function useMediaItems({ onLoadFailed }) {
     resize: (id, width, x, y) => updateFromGesture(id, { width, x, y }),
     randomize: () =>
       commit((current) => current.map((item) => ({ ...item, ...randomLayout() }))),
+    reorder: (id, delta) => commit((current) => moveItem(current, id, delta), `reorder:${id}`),
     undo,
     redo,
     blobFor: (id) => assets.current.get(id)?.blob ?? null,
