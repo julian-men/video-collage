@@ -132,6 +132,15 @@
   -webkit-user-select: none;
 }
 
+.media-tile--selected {
+  outline: 3px solid var(--aqua);
+  outline-offset: 3px;
+}
+
+.app--presenting .media-tile--selected {
+  outline: none;
+}
+
 .media-tile--dragging {
   cursor: grabbing;
 }
@@ -1193,4 +1202,13 @@ kbd {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.85rem;
+}
+
+.tile-style__value {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.tile-style input[type='range'] {
+  width: 100%;
 }

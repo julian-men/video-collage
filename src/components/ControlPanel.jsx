@@ -9,6 +9,7 @@ import { formatTime } from '../utils/formatTime.js'
 import RevealControls from './RevealControls.jsx'
 import RevealOrderList from './RevealOrderList.jsx'
 import SoundtrackControls from './SoundtrackControls.jsx'
+import TileStyleControls from './TileStyleControls.jsx'
 
 const RECOMMEND_STANDARD_SECONDS = 60
 const LONG_EXPORT_SECONDS = 5 * 60
@@ -22,6 +23,9 @@ function formatMegabytes(bytes) {
 function ControlPanel({
   items,
   onReorder,
+  selectedItem,
+  onStyleChange,
+  onStyleReset,
   hasBackground,
   reveal,
   sync,
@@ -215,6 +219,14 @@ function ControlPanel({
       >
         Randomize layout
       </button>
+
+      {itemCount > 0 && (
+        <TileStyleControls
+          item={selectedItem}
+          onChange={(patch) => onStyleChange(selectedItem.id, patch)}
+          onReset={() => onStyleReset(selectedItem.id)}
+        />
+      )}
 
       <div className="control-panel__row">
         <button

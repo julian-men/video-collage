@@ -22,6 +22,8 @@ function useElementSize(ref) {
 
 function Workspace({
   items,
+  selectedId,
+  onSelectItem,
   showPlaceholder,
   background,
   onItemAspectRatio,
@@ -73,6 +75,9 @@ function Workspace({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onSelectItem(null)
+      }}
     >
       {showPlaceholder && (
         <p className="workspace__empty">
@@ -85,6 +90,8 @@ function Workspace({
             key={item.id}
             item={item}
             rect={getTileRect(item, size)}
+            isSelected={item.id === selectedId}
+            onSelect={onSelectItem}
             onAspectRatio={onItemAspectRatio}
             onGestureStart={onItemGestureStart}
             onMove={onItemMove}

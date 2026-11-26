@@ -8,6 +8,7 @@ import {
 } from '../utils/history.js'
 import { moveItem } from '../utils/itemOrder.js'
 import { probeMedia, validateMediaFile } from '../utils/mediaFiles.js'
+import { DEFAULT_TILE_STYLE, normalizeStyle } from '../utils/tileStyle.js'
 
 const MIN_ITEM_WIDTH = 240
 const MAX_ITEM_WIDTH = 480
@@ -162,6 +163,7 @@ function useMediaItems({ onLoadFailed }) {
         url: register(id, file),
         type: result.type,
         aspectRatio: DEFAULT_ASPECT_RATIO,
+        style: DEFAULT_TILE_STYLE,
         ...randomLayout(),
       })
     }
@@ -206,6 +208,18 @@ function useMediaItems({ onLoadFailed }) {
     })
   }
 
+  // Slider drags on the same property of the same tile merge into one step.
+  function setStyle(id, patch) {
+    const tag = `style:${id}:${Object.keys(patch).join(',')}`
+    commit(
+      (current) =>
+        current.map((item) =>
+          item.id === id ? { ...item, style: normalizeStyle({ ...item.style, ...patch }) } : item,
+        ),
+      tag,
+    )
+  }
+
   function undo() {
     setState((current) => {
       const step = undoStep(current.history, current.items)
@@ -239,6 +253,8 @@ function useMediaItems({ onLoadFailed }) {
     resize: (id, width, x, y) => updateFromGesture(id, { width, x, y }),
     randomize: () =>
       commit((current) => current.map((item) => ({ ...item, ...randomLayout() }))),
+    setStyle,
+    resetStyle: (id) => commit((current) => patchItem(current, id, { style: DEFAULT_TILE_STYLE })),
     reorder: (id, delta) => commit((current) => moveItem(current, id, delta), `reorder:${id}`),
     undo,
     redo,

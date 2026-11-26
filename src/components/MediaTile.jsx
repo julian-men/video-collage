@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { NO_VIDEO_PICTURE_MESSAGE, describeLoadError } from '../utils/mediaFiles.js'
+import { normalizeStyle, radiusPx } from '../utils/tileStyle.js'
 
 const MIN_RESIZE_WIDTH = 80
 
@@ -10,6 +11,8 @@ function clamp(value, min, max) {
 function MediaTile({
   item,
   rect,
+  isSelected,
+  onSelect,
   onAspectRatio,
   onGestureStart,
   onMove,
@@ -32,6 +35,7 @@ function MediaTile({
     if (event.target.closest('button, .media-tile__resize')) return
     event.preventDefault()
     onGestureStart()
+    onSelect(item.id)
     onBringToFront(item.id)
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = {
@@ -68,6 +72,7 @@ function MediaTile({
     event.preventDefault()
     event.stopPropagation()
     onGestureStart()
+    onSelect(item.id)
     onBringToFront(item.id)
     event.currentTarget.setPointerCapture(event.pointerId)
     resizeRef.current = {
@@ -123,17 +128,23 @@ function MediaTile({
   }
 
   const mediaStyle = { aspectRatio: item.aspectRatio }
+  const look = normalizeStyle(item.style)
 
   return (
     <figure
       className={`media-tile${isDragging ? ' media-tile--dragging' : ''}${
         isResizing ? ' media-tile--resizing' : ''
-      }`}
+      }${isSelected ? ' media-tile--selected' : ''}`}
+      data-item-id={item.id}
       style={{
         width: rect.width,
         left: rect.left,
         top: rect.top,
         zIndex: item.zIndex,
+        opacity: look.opacity,
+        borderRadius: radiusPx(look, rect.width, rect.width / item.aspectRatio),
+        transform: look.rotation ? `rotate(${look.rotation}deg)` : undefined,
+        boxShadow: look.shadow ? undefined : 'none',
       }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}

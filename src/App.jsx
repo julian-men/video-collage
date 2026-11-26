@@ -46,6 +46,8 @@ function App() {
     onLoadFailed: (item, message) => noticeItemFailed(item.id, item.name, message),
   })
   const { items } = media
+  const [selectedId, setSelectedId] = useState(null)
+  const selectedItem = items.find((item) => item.id === selectedId) ?? null
   const [background, setBackground] = useState(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
@@ -330,6 +332,8 @@ function App() {
     >
       <Workspace
         items={visibleItems}
+        selectedId={selectedId}
+        onSelectItem={setSelectedId}
         showPlaceholder={items.length === 0}
         background={background}
         onItemAspectRatio={media.setAspectRatio}
@@ -353,6 +357,9 @@ function App() {
         <ControlPanel
           items={items}
           onReorder={media.reorder}
+          selectedItem={selectedItem}
+          onStyleChange={media.setStyle}
+          onStyleReset={media.resetStyle}
           hasBackground={background !== null}
           reveal={reveal}
           sync={sync}
