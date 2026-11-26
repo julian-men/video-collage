@@ -33,6 +33,10 @@ function ControlPanel({
   onAddMedia,
   onSetBackground,
   onRandomizeLayout,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
   onEnterPresentation,
   exportQuality,
   onExportQualityChange,
@@ -208,6 +212,27 @@ function ControlPanel({
       >
         Randomize layout
       </button>
+
+      <div className="control-panel__row">
+        <button
+          type="button"
+          className="control-panel__button"
+          onClick={onUndo}
+          disabled={!canUndo}
+          title="Undo (Ctrl/⌘ Z)"
+        >
+          Undo
+        </button>
+        <button
+          type="button"
+          className="control-panel__button"
+          onClick={onRedo}
+          disabled={!canRedo}
+          title="Redo (Ctrl/⌘ Shift Z)"
+        >
+          Redo
+        </button>
+      </div>
 
       <RevealControls
         reveal={reveal}

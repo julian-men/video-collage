@@ -3,6 +3,8 @@ const SHORTCUTS = [
   ['→ or N', 'Reveal next item (off while synced to music)'],
   ['R', 'Reset reveal (rewinds music when synced)'],
   ['L', 'Randomize layout'],
+  ['Ctrl/⌘ Z', 'Undo layout change'],
+  ['Ctrl/⌘ Shift Z or Ctrl Y', 'Redo'],
   ['Esc', 'Close dialogs / exit presentation'],
   ['?', 'Toggle this help'],
 ]

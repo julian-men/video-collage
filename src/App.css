@@ -1160,3 +1160,9 @@ kbd {
     transition: none;
   }
 }
+
+.control-panel__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}

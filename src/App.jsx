@@ -7,6 +7,7 @@ import ShortcutHelp from './components/ShortcutHelp.jsx'
 import Workspace from './components/Workspace.jsx'
 import useCollageExport from './hooks/useCollageExport.js'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
+import useMediaItems from './hooks/useMediaItems.js'
 import useMusicSync from './hooks/useMusicSync.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
@@ -21,15 +22,11 @@ import {
   SUPPORTED_MEDIA_DESCRIPTION,
   probeMedia,
   validateBackgroundFile,
-  validateMediaFile,
 } from './utils/mediaFiles.js'
 import { isSoundtrackFile } from './utils/audioFiles.js'
 import { itemsShownBefore } from './utils/revealTimeline.js'
 import './App.css'
 
-const MIN_ITEM_WIDTH = 240
-const MAX_ITEM_WIDTH = 480
-const DEFAULT_ASPECT_RATIO = 16 / 9
 const MAX_NOTICES = 4
 
 function createNotice(fields) {
@@ -44,31 +41,11 @@ function createObjectUrlItem(file) {
   }
 }
 
-// Positions are stored as 0–1 fractions of the free space in the workspace, so
-// an item stays fully visible no matter how large the workspace is.
-function randomLayout() {
-  return {
-    width: MIN_ITEM_WIDTH + Math.random() * (MAX_ITEM_WIDTH - MIN_ITEM_WIDTH),
-    x: Math.random(),
-    y: Math.random(),
-  }
-}
-
-function createMediaItem(file, type) {
-  return {
-    ...createObjectUrlItem(file),
-    ...randomLayout(),
-    type,
-    aspectRatio: DEFAULT_ASPECT_RATIO,
-  }
-}
-
-function topZIndex(items) {
-  return items.reduce((max, item) => Math.max(max, item.zIndex), 0)
-}
-
 function App() {
-  const [items, setItems] = useState([])
+  const media = useMediaItems({
+    onLoadFailed: (item, message) => noticeItemFailed(item.id, item.name, message),
+  })
+  const { items } = media
   const [background, setBackground] = useState(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
@@ -83,8 +60,6 @@ function App() {
   const [exportLength, setExportLength] = useState('short')
 
   const appRef = useRef(null)
-  // Cancel functions for in-flight load checks, keyed by item id.
-  const probes = useRef(new Map())
   // Bumped whenever a newer background request (or clear-all) supersedes one.
   const backgroundRequest = useRef(0)
   const backgroundRef = useRef(background)
@@ -134,15 +109,13 @@ function App() {
     ? itemsShownBefore(syncTimeline, soundtrack.duration, items.length)
     : null
 
-  // Tracks every live object URL so they can be revoked when the app unmounts.
+  // Background image URLs, revoked when the app unmounts. Collage item URLs
+  // belong to useMediaItems.
   const liveUrls = useRef(new Set())
 
   useEffect(() => {
     const urls = liveUrls.current
-    const pendingProbes = probes.current
     return () => {
-      pendingProbes.forEach((cancel) => cancel())
-      pendingProbes.clear()
       urls.forEach((url) => URL.revokeObjectURL(url))
       urls.clear()
     }
@@ -162,23 +135,13 @@ function App() {
     setNotices((current) => current.filter((notice) => notice.id !== id))
   }
 
-  function cancelProbe(id) {
-    probes.current.get(id)?.()
-    probes.current.delete(id)
-  }
-
-  function markItemFailed(id, name, message) {
+  function noticeItemFailed(id, name, message) {
     const notice = createNotice({
       kind: 'error',
       title: `Couldn't display “${name}”`,
       message,
       itemId: id,
     })
-    setItems((current) =>
-      current.map((item) =>
-        item.id === id && !item.loadError ? { ...item, loadError: message } : item,
-      ),
-    )
     setNotices((current) =>
       current.some((existing) => existing.itemId === id)
         ? current
@@ -186,52 +149,18 @@ function App() {
     )
   }
 
-  // Checks every new item in a detached element, so files hidden by reveal
-  // mode are verified too.
-  function startProbe(item) {
-    const probe = probeMedia(item.url, item.type)
-    probes.current.set(item.id, probe.cancel)
-    probe.promise.then((result) => {
-      if (!probes.current.has(item.id)) return
-      probes.current.delete(item.id)
-      if (result.ok === false) markItemFailed(item.id, item.name, result.message)
-    })
-  }
-
   function handleAddMedia(files) {
-    const newItems = []
-    const rejected = []
-    for (const file of files) {
-      const result = validateMediaFile(file)
-      if (result.type) newItems.push(createMediaItem(file, result.type))
-      else rejected.push(`${file.name} (${result.reason})`)
-    }
-
-    if (rejected.length > 0) {
-      pushNotice({
-        kind: 'warning',
-        title:
-          rejected.length === 1
-            ? '1 file was not added'
-            : `${rejected.length} files were not added`,
-        files: rejected,
-        message: SUPPORTED_MEDIA_DESCRIPTION,
-      })
-    }
-    if (newItems.length === 0) return
-
-    newItems.forEach((item) => liveUrls.current.add(item.url))
-    setItems((current) => {
-      const top = topZIndex(current)
-      return [
-        ...current,
-        ...newItems.map((item, index) => ({
-          ...item,
-          zIndex: top + index + 1,
-        })),
-      ]
+    const rejected = media.add(files)
+    if (rejected.length === 0) return
+    pushNotice({
+      kind: 'warning',
+      title:
+        rejected.length === 1
+          ? '1 file was not added'
+          : `${rejected.length} files were not added`,
+      files: rejected,
+      message: SUPPORTED_MEDIA_DESCRIPTION,
     })
-    newItems.forEach(startProbe)
   }
 
   // Dropped audio becomes the soundtrack; everything else goes to the collage.
@@ -244,50 +173,16 @@ function App() {
 
   function handleItemLoadError(id, message) {
     const item = items.find((candidate) => candidate.id === id)
-    if (item) markItemFailed(id, item.name, message)
-  }
-
-  function handleBringToFront(id) {
-    setItems((current) => {
-      const top = topZIndex(current)
-      const target = current.find((item) => item.id === id)
-      if (!target || target.zIndex === top) return current
-      return current.map((item) =>
-        item.id === id ? { ...item, zIndex: top + 1 } : item,
-      )
-    })
-  }
-
-  function handleAspectRatio(id, aspectRatio) {
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, aspectRatio } : item)),
-    )
-  }
-
-  function handleMove(id, x, y) {
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, x, y } : item)),
-    )
-  }
-
-  function handleResize(id, width, x, y) {
-    setItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, width, x, y } : item)),
-    )
+    if (!item || item.loadError) return
+    media.markFailed(id, message)
+    noticeItemFailed(id, item.name, message)
   }
 
   function handleRemove(id) {
-    const index = items.findIndex((item) => item.id === id)
+    const index = media.remove(id)
     if (index === -1) return
-    cancelProbe(id)
-    revoke(items[index].url)
-    setItems(items.filter((item) => item.id !== id))
     setNotices((current) => current.filter((notice) => notice.itemId !== id))
     reveal.handleRemoved(index)
-  }
-
-  function handleRandomizeLayout() {
-    setItems(items.map((item) => ({ ...item, ...randomLayout() })))
   }
 
   // The current background is only replaced once the new image has loaded,
@@ -328,12 +223,9 @@ function App() {
   }
 
   function handleClearAll() {
-    probes.current.forEach((cancel) => cancel())
-    probes.current.clear()
     backgroundRequest.current += 1
-    items.forEach((item) => revoke(item.url))
     if (background) revoke(background.url)
-    setItems([])
+    media.clear()
     setBackground(null)
     setNotices((current) => current.filter((notice) => !notice.itemId))
     reveal.restoreInitial()
@@ -418,8 +310,11 @@ function App() {
     },
     l: () => {
       if (items.length === 0) return false
-      handleRandomizeLayout()
+      media.randomize()
     },
+    'mod+z': () => media.undo(),
+    'mod+shift+z': () => media.redo(),
+    'mod+y': () => media.redo(),
     '?': () => setIsHelpOpen((open) => !open),
     escape: () => {
       setIsHelpOpen(false)
@@ -437,10 +332,11 @@ function App() {
         items={visibleItems}
         showPlaceholder={items.length === 0}
         background={background}
-        onItemAspectRatio={handleAspectRatio}
-        onItemMove={handleMove}
-        onItemResize={handleResize}
-        onItemBringToFront={handleBringToFront}
+        onItemAspectRatio={media.setAspectRatio}
+        onItemGestureStart={media.beginGesture}
+        onItemMove={media.move}
+        onItemResize={media.resize}
+        onItemBringToFront={media.bringToFront}
         onItemRemove={handleRemove}
         onItemLoadError={handleItemLoadError}
         onDropFiles={handleDropFiles}
@@ -468,7 +364,11 @@ function App() {
           mediaAccept={MEDIA_ACCEPT}
           onAddMedia={handleAddMedia}
           onSetBackground={handleSetBackground}
-          onRandomizeLayout={handleRandomizeLayout}
+          onRandomizeLayout={media.randomize}
+          canUndo={media.canUndo}
+          canRedo={media.canRedo}
+          onUndo={media.undo}
+          onRedo={media.redo}
           onEnterPresentation={handleEnterPresentation}
           exportQuality={exportQuality}
           onExportQualityChange={setExportQuality}

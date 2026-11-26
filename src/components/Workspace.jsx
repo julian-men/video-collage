@@ -25,6 +25,7 @@ function Workspace({
   showPlaceholder,
   background,
   onItemAspectRatio,
+  onItemGestureStart,
   onItemMove,
   onItemResize,
   onItemBringToFront,
@@ -85,6 +86,7 @@ function Workspace({
             item={item}
             rect={getTileRect(item, size)}
             onAspectRatio={onItemAspectRatio}
+            onGestureStart={onItemGestureStart}
             onMove={onItemMove}
             onResize={onItemResize}
             onBringToFront={onItemBringToFront}

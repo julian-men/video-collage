@@ -11,6 +11,7 @@ function MediaTile({
   item,
   rect,
   onAspectRatio,
+  onGestureStart,
   onMove,
   onResize,
   onBringToFront,
@@ -30,6 +31,7 @@ function MediaTile({
     if (event.pointerType === 'mouse' && event.button !== 0) return
     if (event.target.closest('button, .media-tile__resize')) return
     event.preventDefault()
+    onGestureStart()
     onBringToFront(item.id)
     event.currentTarget.setPointerCapture(event.pointerId)
     dragRef.current = {
@@ -65,6 +67,7 @@ function MediaTile({
     if (event.pointerType === 'mouse' && event.button !== 0) return
     event.preventDefault()
     event.stopPropagation()
+    onGestureStart()
     onBringToFront(item.id)
     event.currentTarget.setPointerCapture(event.pointerId)
     resizeRef.current = {
