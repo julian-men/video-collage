@@ -238,7 +238,13 @@ function useSoundtrack(onProblem) {
     const audio = getAudio()
     releaseAudio(audio)
     if (trackRef.current) URL.revokeObjectURL(trackRef.current.url)
-    const next = { id: crypto.randomUUID(), name: file.name, url: URL.createObjectURL(file) }
+    const next = {
+      id: crypto.randomUUID(),
+      name: file.name,
+      url: URL.createObjectURL(file),
+      // The source file, kept for autosave.
+      file,
+    }
     trackRef.current = next
     audio.src = next.url
     setTrack(next)

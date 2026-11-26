@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import AboutDialog from './components/AboutDialog.jsx'
 import ControlPanel from './components/ControlPanel.jsx'
 import CreditBar from './components/CreditBar.jsx'
@@ -10,11 +10,14 @@ import useKeyboardShortcuts from './hooks/useKeyboardShortcuts.js'
 import useMediaItems from './hooks/useMediaItems.js'
 import useMusicSync from './hooks/useMusicSync.js'
 import usePresentationMode from './hooks/usePresentationMode.js'
-import useRevealMode from './hooks/useRevealMode.js'
+import useProjectPersistence from './hooks/useProjectPersistence.js'
+import useRevealMode, { REVEAL_INTERVAL_OPTIONS } from './hooks/useRevealMode.js'
 import useSoundtrack from './hooks/useSoundtrack.js'
 import {
   DEFAULT_EXPORT_FRAME,
   DEFAULT_EXPORT_QUALITY,
+  EXPORT_FRAMES,
+  EXPORT_QUALITIES,
   defaultExportFormat,
   getExportFormatSupport,
 } from './utils/exportCollageVideo.js'
@@ -25,6 +28,8 @@ import {
   validateBackgroundFile,
 } from './utils/mediaFiles.js'
 import { isSoundtrackFile } from './utils/audioFiles.js'
+import { BEATS_PER_REVEAL_OPTIONS } from './utils/beatSync.js'
+import { toRecord } from './utils/projectRecord.js'
 import { itemsShownBefore } from './utils/revealTimeline.js'
 import './App.css'
 
@@ -39,7 +44,14 @@ function createObjectUrlItem(file) {
     id: crypto.randomUUID(),
     name: file.name,
     url: URL.createObjectURL(file),
+    // The source file, kept for autosave.
+    blob: file,
   }
+}
+
+// Saved Blobs become Files again so the usual upload checks apply.
+function toFile(blob, name) {
+  return new File([blob], name, { type: blob.type })
 }
 
 function App() {
@@ -112,6 +124,110 @@ function App() {
   const fullExportCoverage = isFullExport
     ? itemsShownBefore(syncTimeline, soundtrack.duration, items.length)
     : null
+
+  const { track, bpmInput, offsetInput, loop } = soundtrack
+  const record = useMemo(
+    () =>
+      toRecord({
+        items,
+        background,
+        soundtrack: track && { ...track, bpmInput, offsetInput },
+        settings: {
+          exportQuality,
+          exportFrame,
+          exportFormat,
+          exportLength,
+          syncEnabled,
+          revealEnabled: reveal.enabled,
+          revealIntervalSeconds: reveal.intervalSeconds,
+          revealRepeat: reveal.repeat,
+          beatsPerReveal: sync.beatsSetting,
+          loop,
+        },
+      }),
+    [
+      items,
+      background,
+      track,
+      bpmInput,
+      offsetInput,
+      exportQuality,
+      exportFrame,
+      exportFormat,
+      exportLength,
+      syncEnabled,
+      reveal.enabled,
+      reveal.intervalSeconds,
+      reveal.repeat,
+      sync.beatsSetting,
+      loop,
+    ],
+  )
+  const saveWarned = useRef(false)
+  useProjectPersistence({
+    record,
+    onRestore: restoreProject,
+    onError: (stage) => {
+      if (saveWarned.current) return
+      saveWarned.current = true
+      pushNotice({
+        kind: 'warning',
+        title:
+          stage === 'restore'
+            ? 'Your last collage could not be restored'
+            : 'Your collage could not be saved in this browser',
+        message:
+          stage === 'restore'
+            ? 'Start a new one; it will be saved as you work.'
+            : 'Changes will be lost when the page reloads. The browser may be out of storage space or in private mode.',
+      })
+    },
+  })
+
+  // Settings are checked against what this version offers, since a saved
+  // value may come from an older version or another browser.
+  function applySettings(settings) {
+    if (settings.exportQuality in EXPORT_QUALITIES) setExportQuality(settings.exportQuality)
+    if (settings.exportFrame in EXPORT_FRAMES) setExportFrame(settings.exportFrame)
+    if (exportSupport[settings.exportFormat]) setExportFormat(settings.exportFormat)
+    if (settings.exportLength === 'short' || settings.exportLength === 'full') {
+      setExportLength(settings.exportLength)
+    }
+    if (settings.revealEnabled === true) reveal.setEnabled(true)
+    if (REVEAL_INTERVAL_OPTIONS.includes(settings.revealIntervalSeconds)) {
+      reveal.setIntervalSeconds(settings.revealIntervalSeconds)
+    }
+    if (typeof settings.revealRepeat === 'boolean') reveal.setRepeat(settings.revealRepeat)
+    if (
+      settings.beatsPerReveal === 'auto' ||
+      BEATS_PER_REVEAL_OPTIONS.includes(settings.beatsPerReveal)
+    ) {
+      sync.setBeatsPerReveal(settings.beatsPerReveal)
+    }
+    if (settings.syncEnabled === true) setSyncEnabled(true)
+    if (typeof settings.loop === 'boolean') soundtrack.setLoop(settings.loop)
+  }
+
+  async function restoreProject(project) {
+    media.replaceAll(project.items)
+    applySettings(project.settings)
+    const tasks = []
+    if (project.background) {
+      tasks.push(handleSetBackground(toFile(project.background.blob, project.background.name)))
+    }
+    if (project.soundtrack) {
+      const saved = project.soundtrack
+      tasks.push(
+        soundtrack.load(toFile(saved.blob, saved.name)).then((loaded) => {
+          if (!loaded) return
+          // Set after loading, so detection doesn't replace a corrected BPM.
+          if (saved.bpmInput !== '') soundtrack.setBpmInput(saved.bpmInput)
+          soundtrack.setOffsetInput(saved.offsetInput)
+        }),
+      )
+    }
+    await Promise.all(tasks)
+  }
 
   // Background image URLs, revoked when the app unmounts. Collage item URLs
   // belong to useMediaItems.

@@ -44,7 +44,7 @@ function patchItem(items, id, patch) {
 function useMediaItems({ onLoadFailed }) {
   const [state, setState] = useState(EMPTY)
   const { items, history } = state
-  // id → { url, blob }. Kept while any history entry still refers to the id.
+  // id → object URL. Kept while any history entry still refers to the id.
   const assets = useRef(new Map())
   // Cancel functions for in-flight load checks, keyed by item id.
   const probes = useRef(new Map())
@@ -59,9 +59,9 @@ function useMediaItems({ onLoadFailed }) {
 
   useEffect(() => {
     const live = referencedIds(history, items)
-    for (const [id, asset] of assets.current) {
+    for (const [id, url] of assets.current) {
       if (live.has(id)) continue
-      URL.revokeObjectURL(asset.url)
+      URL.revokeObjectURL(url)
       assets.current.delete(id)
       probes.current.get(id)?.()
       probes.current.delete(id)
@@ -74,7 +74,7 @@ function useMediaItems({ onLoadFailed }) {
     return () => {
       currentProbes.forEach((cancel) => cancel())
       currentProbes.clear()
-      currentAssets.forEach((asset) => URL.revokeObjectURL(asset.url))
+      currentAssets.forEach((url) => URL.revokeObjectURL(url))
       currentAssets.clear()
     }
   }, [])
@@ -142,7 +142,7 @@ function useMediaItems({ onLoadFailed }) {
 
   function register(id, blob) {
     const url = URL.createObjectURL(blob)
-    assets.current.set(id, { url, blob })
+    assets.current.set(id, url)
     return url
   }
 
@@ -161,6 +161,8 @@ function useMediaItems({ onLoadFailed }) {
         id,
         name: file.name,
         url: register(id, file),
+        // The source file, kept for autosave.
+        blob: file,
         type: result.type,
         aspectRatio: DEFAULT_ASPECT_RATIO,
         style: DEFAULT_TILE_STYLE,
@@ -177,11 +179,9 @@ function useMediaItems({ onLoadFailed }) {
     return rejected
   }
 
-  /** Replaces everything with restored items; `blobs` maps id → Blob. */
-  function replaceAll(restored, blobs) {
-    const next = restored
-      .filter((item) => blobs.has(item.id))
-      .map((item) => ({ ...item, url: register(item.id, blobs.get(item.id)) }))
+  /** Replaces everything with restored items, each carrying its `blob`. */
+  function replaceAll(restored) {
+    const next = restored.map((item) => ({ ...item, url: register(item.id, item.blob) }))
     setState({ items: next, history: emptyHistory() })
     next.forEach(startProbe)
   }
@@ -258,7 +258,6 @@ function useMediaItems({ onLoadFailed }) {
     reorder: (id, delta) => commit((current) => moveItem(current, id, delta), `reorder:${id}`),
     undo,
     redo,
-    blobFor: (id) => assets.current.get(id)?.blob ?? null,
   }
 }
 
