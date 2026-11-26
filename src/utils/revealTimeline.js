@@ -30,3 +30,21 @@ export function itemsShownBefore(timeline, duration, total) {
   const steps = Math.ceil((duration - timeline.anchor) / stepSeconds - EPSILON)
   return Math.min(total, Math.max(0, steps))
 }
+
+// Widest spacing first, so Auto spreads the items across as much of the song
+// as it can.
+const AUTO_BEAT_CANDIDATES = [64, 32, 16, 8, 4, 2, 1]
+
+/**
+ * Beats per reveal for "Auto": the widest spacing that still shows every item
+ * at least once before `duration` seconds, or 1 when even that can't.
+ */
+export function autoBeatsPerReveal({ duration, anchor, bpm, total }) {
+  if (!(duration > 0)) return 1
+  return (
+    AUTO_BEAT_CANDIDATES.find(
+      (beatsPerReveal) =>
+        itemsShownBefore({ anchor, bpm, beatsPerReveal }, duration, total) >= total,
+    ) ?? 1
+  )
+}

@@ -46,14 +46,25 @@ function RevealControls({ reveal, sync, syncEnabled, visibleCount, onToggleSync 
             <label className="reveal-controls__interval">
               <span>Reveal every</span>
               <select
-                value={sync.beatsPerReveal}
-                onChange={(event) => sync.setBeatsPerReveal(Number(event.target.value))}
+                value={sync.beatsSetting}
+                onChange={(event) =>
+                  sync.setBeatsPerReveal(
+                    event.target.value === 'auto' ? 'auto' : Number(event.target.value),
+                  )
+                }
               >
                 {BEATS_PER_REVEAL_OPTIONS.map((beats) => (
                   <option key={beats} value={beats}>
                     {beats} beat{beats === 1 ? '' : 's'}
                   </option>
                 ))}
+                <option value="auto">
+                  Auto (fit the song
+                  {sync.beatsSetting === 'auto'
+                    ? `: ${sync.beatsPerReveal} beat${sync.beatsPerReveal === 1 ? '' : 's'}`
+                    : ''}
+                  )
+                </option>
               </select>
             </label>
           ) : (

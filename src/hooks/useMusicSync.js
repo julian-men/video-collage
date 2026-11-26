@@ -4,6 +4,7 @@ import {
   revealStepAt,
   visibleCountForStep,
 } from '../utils/beatSync.js'
+import { autoBeatsPerReveal } from '../utils/revealTimeline.js'
 
 const SYNC_EVENTS = [
   'play',
@@ -26,7 +27,8 @@ const MIN_DELAY_MS = 4
  * the audio plays.
  */
 function useMusicSync(soundtrack, { enabled, totalCount, repeat }) {
-  const [beatsPerReveal, setBeatsPerReveal] = useState(1)
+  // A number of beats, or 'auto' to spread every item across the song.
+  const [beatsSetting, setBeatsPerReveal] = useState(1)
   const [step, setStep] = useState(0)
   // Id of the track the sequence is running for. Reset clears it so nothing
   // shows until playback starts again; a new track clears it implicitly.
@@ -37,6 +39,12 @@ function useMusicSync(soundtrack, { enabled, totalCount, repeat }) {
   const isActive = enabled && isAvailable
   const anchor = isAvailable ? revealAnchor(firstBeat, offsetMs, bpm) : 0
   const isArmed = track !== null && armedTrackId === track.id
+  let beatsPerReveal = beatsSetting
+  if (beatsSetting === 'auto') {
+    beatsPerReveal = isAvailable
+      ? autoBeatsPerReveal({ duration: soundtrack.duration, anchor, bpm, total: totalCount })
+      : 1
+  }
 
   useEffect(() => {
     const audio = audioRef.current
@@ -107,6 +115,7 @@ function useMusicSync(soundtrack, { enabled, totalCount, repeat }) {
     isArmed,
     anchor,
     bpm,
+    beatsSetting,
     beatsPerReveal,
     visibleCount,
     armIfStarted,

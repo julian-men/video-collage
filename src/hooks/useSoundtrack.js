@@ -54,6 +54,8 @@ function useSoundtrack(onProblem) {
   const [duration, setDuration] = useState(0)
   const [bpmInput, setBpmInput] = useState('')
   const [offsetInput, setOffsetInput] = useState('0')
+  // Kept across track changes; the full-soundtrack export still plays once.
+  const [loop, setLoop] = useState(false)
 
   const audioRef = useRef(null)
   const listenersRef = useRef(null)
@@ -66,6 +68,10 @@ function useSoundtrack(onProblem) {
   useEffect(() => {
     onProblemRef.current = onProblem
   })
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.loop = loop
+  }, [loop, track])
 
   useEffect(
     () => () => {
@@ -313,6 +319,8 @@ function useSoundtrack(onProblem) {
     offsetMs,
     offsetInput,
     setOffsetInput,
+    loop,
+    setLoop,
     isPlaying,
     currentTime,
     duration,

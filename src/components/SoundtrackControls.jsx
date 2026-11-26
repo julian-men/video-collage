@@ -62,6 +62,15 @@ function SoundtrackControls({ soundtrack, onLoad, onRemove, onPlay, onPause, onS
             </button>
           </div>
 
+          <label className="reveal-controls__toggle">
+            <input
+              type="checkbox"
+              checked={soundtrack.loop}
+              onChange={(event) => soundtrack.setLoop(event.target.checked)}
+            />
+            <span>Loop soundtrack</span>
+          </label>
+
           <label className="soundtrack-controls__seek">
             <span className="soundtrack-controls__time" aria-hidden="true">
               {formatTime(currentTime)} / {formatTime(duration)}
