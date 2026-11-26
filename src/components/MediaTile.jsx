@@ -142,7 +142,7 @@ function MediaTile({
         top: rect.top,
         zIndex: item.zIndex,
         opacity: look.opacity,
-        borderRadius: radiusPx(look, rect.width, rect.width / item.aspectRatio),
+        '--tile-radius': `${radiusPx(look, rect.width, rect.width / item.aspectRatio)}px`,
         transform: look.rotation ? `rotate(${look.rotation}deg)` : undefined,
         boxShadow: look.shadow ? undefined : 'none',
       }}

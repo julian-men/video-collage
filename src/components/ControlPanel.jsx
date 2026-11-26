@@ -1,6 +1,7 @@
 import { APP_NAME } from '../appInfo.js'
 import {
   EXPORT_FORMATS,
+  EXPORT_FRAMES,
   EXPORT_QUALITIES,
   SHORT_EXPORT_SECONDS,
   estimateExportBytes,
@@ -46,6 +47,8 @@ function ControlPanel({
   onEnterPresentation,
   exportQuality,
   onExportQualityChange,
+  exportFrame,
+  onExportFrameChange,
   exportFormat,
   exportSupport,
   exportMode,
@@ -80,7 +83,7 @@ function ControlPanel({
   const isEmpty = itemCount === 0 && !hasBackground && !hasSoundtrack
 
   const quality = EXPORT_QUALITIES[exportQuality]
-  const qualitySummary = `${quality.label}: up to ${quality.maxWidth}×${quality.maxHeight}, ${
+  const qualitySummary = `${quality.label}: up to ${quality.maxHeight}p, ${
     quality.videoBitsPerSecond / 1_000_000
   } Mbps`
   const format = EXPORT_FORMATS[exportFormat]
@@ -310,6 +313,28 @@ function ControlPanel({
       <p id="export-quality-summary" className="control-panel__status">
         {qualitySummary} · {exportSummary}
       </p>
+
+      <label className="reveal-controls__interval export-quality">
+        <span>Export shape</span>
+        <select
+          value={exportFrame}
+          onChange={(event) => onExportFrameChange(event.target.value)}
+          disabled={isExporting}
+          aria-describedby="export-frame-note"
+        >
+          {Object.entries(EXPORT_FRAMES).map(([value, option]) => (
+            <option key={value} value={value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {exportFrame !== 'workspace' && (
+        <p id="export-frame-note" className="control-panel__status">
+          The whole collage is fitted inside the frame; the background fills the
+          space around it.
+        </p>
+      )}
 
       {fullLengthAvailable && (
         <label className="reveal-controls__interval export-quality">

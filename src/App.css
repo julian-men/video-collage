@@ -120,10 +120,12 @@
 /* Media tile */
 
 .media-tile {
+  /* Rounded corners round the media and caption, not the tile, so the remove
+     button and resize handle in the corners are never clipped. */
+  --tile-radius: 0px;
   position: absolute;
   margin: 0;
-  border-radius: 0;
-  overflow: hidden;
+  border-radius: var(--tile-radius);
   background: #000;
   box-shadow: var(--shadow-soft);
   cursor: grab;
@@ -145,6 +147,11 @@
   cursor: grabbing;
 }
 
+.media-tile__media,
+.media-tile__failed {
+  border-radius: var(--tile-radius);
+}
+
 .media-tile__media {
   pointer-events: none;
   display: block;
@@ -155,6 +162,7 @@
 }
 
 .media-tile__caption {
+  border-radius: 0 0 var(--tile-radius) var(--tile-radius);
   position: absolute;
   left: 0;
   right: 0;

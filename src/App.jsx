@@ -13,6 +13,7 @@ import usePresentationMode from './hooks/usePresentationMode.js'
 import useRevealMode from './hooks/useRevealMode.js'
 import useSoundtrack from './hooks/useSoundtrack.js'
 import {
+  DEFAULT_EXPORT_FRAME,
   DEFAULT_EXPORT_QUALITY,
   defaultExportFormat,
   getExportFormatSupport,
@@ -54,6 +55,7 @@ function App() {
   const [notices, setNotices] = useState([])
   const [syncEnabled, setSyncEnabled] = useState(false)
   const [exportQuality, setExportQuality] = useState(DEFAULT_EXPORT_QUALITY)
+  const [exportFrame, setExportFrame] = useState(DEFAULT_EXPORT_FRAME)
   // Recorder support can't change during a session, so it's checked once.
   const [exportSupport] = useState(getExportFormatSupport)
   const [exportFormat, setExportFormat] = useState(() =>
@@ -267,7 +269,9 @@ function App() {
     collageExport.exportVideo({
       workspace: appRef.current?.querySelector('.workspace'),
       background,
+      items: visibleItems,
       quality: exportQuality,
+      frame: exportFrame,
       format: exportFormat,
       reveal: revealExport,
       length: effectiveExportLength,
@@ -380,6 +384,8 @@ function App() {
           onEnterPresentation={handleEnterPresentation}
           exportQuality={exportQuality}
           onExportQualityChange={setExportQuality}
+          exportFrame={exportFrame}
+          onExportFrameChange={setExportFrame}
           exportFormat={exportFormat}
           exportSupport={exportSupport}
           exportMode={exportMode}

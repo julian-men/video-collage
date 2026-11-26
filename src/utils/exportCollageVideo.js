@@ -1,6 +1,7 @@
 import { EXPORT_FILE_BASENAME } from '../appInfo.js'
 import { revealCountAt } from './revealTimeline.js'
 import { getTileRect } from './tileLayout.js'
+import { normalizeStyle, radiusPx } from './tileStyle.js'
 
 export const SHORT_EXPORT_SECONDS = 5
 const STOP_TIMEOUT_MS = 3000
@@ -32,6 +33,15 @@ export const EXPORT_QUALITIES = {
   },
 }
 export const DEFAULT_EXPORT_QUALITY = 'high'
+
+// `aspect` null keeps the workspace's own shape.
+export const EXPORT_FRAMES = {
+  workspace: { label: 'Match workspace', aspect: null },
+  landscape: { label: 'Landscape 16:9', aspect: 16 / 9 },
+  portrait: { label: 'Portrait 9:16', aspect: 9 / 16 },
+  square: { label: 'Square 1:1', aspect: 1 },
+}
+export const DEFAULT_EXPORT_FRAME = 'workspace'
 
 /**
  * Upper estimate of the file size in bytes from the target bitrates. Browsers
@@ -264,25 +274,35 @@ function loadImage(url, message = 'The background image could not be loaded.') {
   })
 }
 
-// Snapshot of every rendered tile so later drags or resizes don't affect the
-// recording. Coordinates are in workspace CSS pixels.
-function measureTiles(workspace) {
-  const origin = workspace.getBoundingClientRect()
-  return [...workspace.querySelectorAll('.media-tile')]
-    .filter((tile) => tile.querySelector('.media-tile__media'))
-    .map((tile) => {
-      const media = tile.querySelector('.media-tile__media')
-      const rect = media.getBoundingClientRect()
-      return {
-        media,
-        zIndex: Number(tile.style.zIndex) || 0,
-        x: rect.left - origin.left,
-        y: rect.top - origin.top,
-        width: rect.width,
-        height: rect.height,
-      }
+// The live tile elements for the visible items, placed from each item's saved
+// position and style. Videos keep playing from where they are on screen.
+function liveTiles(items, workspace, workspaceSize) {
+  return items
+    .map((item, index) => {
+      if (item.loadError) return null
+      const tile = [...workspace.querySelectorAll('.media-tile')].find(
+        (element) => element.dataset.itemId === item.id,
+      )
+      const media = tile?.querySelector('.media-tile__media')
+      if (!media) return null
+      return placeTile(item, index, media, workspaceSize)
     })
+    .filter(Boolean)
     .sort((a, b) => a.zIndex - b.zIndex)
+}
+
+function placeTile(item, index, media, workspaceSize) {
+  const rect = getTileRect(item, workspaceSize)
+  return {
+    index,
+    media,
+    zIndex: item.zIndex,
+    style: normalizeStyle(item.style),
+    x: rect.left,
+    y: rect.top,
+    width: rect.width,
+    height: rect.width / item.aspectRatio,
+  }
 }
 
 function loadRevealMedia(item, created) {
@@ -329,16 +349,7 @@ async function loadRevealTiles(items, workspaceSize, created, signal) {
       items.map(async (item, index) => {
         if (item.loadError) return null
         const media = await loadRevealMedia(item, created)
-        const rect = getTileRect(item, workspaceSize)
-        return {
-          index,
-          media,
-          zIndex: item.zIndex,
-          x: rect.left,
-          y: rect.top,
-          width: rect.width,
-          height: rect.width / item.aspectRatio,
-        }
+        return placeTile(item, index, media, workspaceSize)
       }),
     ),
     signal,
@@ -477,67 +488,124 @@ function drawCoverImage(ctx, image, width, height) {
   )
 }
 
-function drawTiles(ctx, tiles) {
-  for (const tile of tiles) {
-    const { media } = tile
-    const ready =
-      media instanceof HTMLVideoElement
-        ? media.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
-        : media.complete && media.naturalWidth > 0
-    ctx.fillStyle = '#000'
-    ctx.fillRect(tile.x, tile.y, tile.width, tile.height)
-    if (ready) ctx.drawImage(media, tile.x, tile.y, tile.width, tile.height)
+function tilePath(ctx, x, y, width, height, radius) {
+  ctx.beginPath()
+  if (radius > 0 && typeof ctx.roundRect === 'function') {
+    ctx.roundRect(x, y, width, height, radius)
+  } else {
+    ctx.rect(x, y, width, height)
   }
 }
 
-// Matches the tiles' `object-fit: contain` on a black tile background, so an
-// item whose saved aspect ratio differs from its file is letterboxed, not
-// stretched.
-function drawRevealTiles(ctx, tiles, count) {
-  for (const tile of tiles) {
-    if (tile.index >= count) continue
-    const { media } = tile
-    ctx.fillStyle = '#000'
-    ctx.fillRect(tile.x, tile.y, tile.width, tile.height)
-    const isVideo = media instanceof HTMLVideoElement
-    const naturalWidth = isVideo ? media.videoWidth : media.naturalWidth
-    const naturalHeight = isVideo ? media.videoHeight : media.naturalHeight
-    const ready = isVideo
-      ? media.videoWidth > 0
-      : media.complete
-    if (!ready || !naturalWidth || !naturalHeight) continue
-    const scale = Math.min(tile.width / naturalWidth, tile.height / naturalHeight)
-    const width = naturalWidth * scale
-    const height = naturalHeight * scale
-    ctx.drawImage(
-      media,
-      tile.x + (tile.width - width) / 2,
-      tile.y + (tile.height - height) / 2,
-      width,
-      height,
-    )
+// Media fitted inside the tile like CSS `object-fit: contain`, or null while
+// it has no frame to draw.
+function containRect(media, width, height) {
+  const isVideo = media instanceof HTMLVideoElement
+  const naturalWidth = isVideo ? media.videoWidth : media.naturalWidth
+  const naturalHeight = isVideo ? media.videoHeight : media.naturalHeight
+  const ready = isVideo
+    ? media.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    : media.complete
+  if (!ready || !naturalWidth || !naturalHeight) return null
+  const scale = Math.min(width / naturalWidth, height / naturalHeight)
+  const drawWidth = naturalWidth * scale
+  const drawHeight = naturalHeight * scale
+  return {
+    x: (width - drawWidth) / 2,
+    y: (height - drawHeight) / 2,
+    width: drawWidth,
+    height: drawHeight,
   }
 }
 
-// Rounds down so the canvas never exceeds the preset's maximum.
+// Shadows from App.css `--shadow-soft`. Each is cast by a copy of the tile
+// moved far off-canvas, so only the shadow lands and the tile's own opacity
+// isn't applied twice.
+const TILE_SHADOWS = [
+  { blur: 30, offsetY: 10, color: 'rgba(6, 70, 130, 0.25)' },
+  { blur: 6, offsetY: 2, color: 'rgba(6, 70, 130, 0.15)' },
+]
+const SHADOW_SHIFT = 100000
+
+/**
+ * Draws one tile like its CSS: rotated about its centre, with rounded corners,
+ * opacity, and shadow, on a black background where the media doesn't reach.
+ */
+function drawTile(ctx, tile) {
+  const { style, width, height } = tile
+  const x = -width / 2
+  const y = -height / 2
+  const radius = radiusPx(style, width, height)
+  ctx.save()
+  ctx.translate(tile.x + width / 2, tile.y + height / 2)
+  ctx.rotate((style.rotation * Math.PI) / 180)
+  ctx.globalAlpha = style.opacity
+  if (style.shadow) {
+    // Shadow offsets are in canvas pixels and ignore the transform, so the
+    // shape is moved off-canvas by a canvas-pixel vector mapped back through it.
+    const transform = ctx.getTransform()
+    const inverse = transform.inverse()
+    const scale = Math.hypot(transform.a, transform.b) || 1
+    for (const shadow of TILE_SHADOWS) {
+      ctx.save()
+      ctx.translate(-SHADOW_SHIFT * inverse.a, -SHADOW_SHIFT * inverse.b)
+      ctx.shadowColor = shadow.color
+      ctx.shadowBlur = shadow.blur * scale
+      ctx.shadowOffsetX = SHADOW_SHIFT
+      ctx.shadowOffsetY = shadow.offsetY * scale
+      tilePath(ctx, x, y, width, height, radius)
+      ctx.fillStyle = '#000'
+      ctx.fill()
+      ctx.restore()
+    }
+  }
+  tilePath(ctx, x, y, width, height, radius)
+  ctx.clip()
+  const fit = containRect(tile.media, width, height)
+  ctx.fillStyle = '#000'
+  if (!fit) {
+    ctx.fillRect(x, y, width, height)
+  } else {
+    // Black only where the media doesn't cover, so opacity applies once.
+    ctx.beginPath()
+    ctx.rect(x, y, width, height)
+    ctx.rect(x + fit.x, y + fit.y, fit.width, fit.height)
+    ctx.fill('evenodd')
+    ctx.drawImage(tile.media, x + fit.x, y + fit.y, fit.width, fit.height)
+  }
+  ctx.restore()
+}
+
+// Rounded to whole pixels first so float error (1679.9999) doesn't cost two
+// pixels, then down to even, which never exceeds the preset's bounds.
 function evenSize(value) {
-  return Math.max(2, Math.floor(value / 2) * 2)
+  return Math.max(2, Math.floor(Math.round(value) / 2) * 2)
 }
 
 /**
- * Largest even-sized canvas that fits inside the preset's bounds with the
- * workspace's own aspect ratio. Small workspaces are scaled up, so videos and
- * images are drawn from their full-resolution elements at the export size.
+ * Canvas size for the chosen frame shape, and where the workspace sits in it.
+ * The preset's long and short sides are swapped for a portrait frame. The
+ * workspace is scaled to fit inside the frame and centred; the background
+ * fills the rest. Videos and images are drawn from their full-resolution
+ * elements at that scale.
  */
-export function exportCanvasSize(workspaceWidth, workspaceHeight, quality) {
+export function exportFrameLayout(workspaceWidth, workspaceHeight, frame, quality) {
   const preset = EXPORT_QUALITIES[quality] ?? EXPORT_QUALITIES[DEFAULT_EXPORT_QUALITY]
-  const scale = Math.min(
-    preset.maxWidth / workspaceWidth,
-    preset.maxHeight / workspaceHeight,
-  )
+  const aspect = EXPORT_FRAMES[frame]?.aspect ?? workspaceWidth / workspaceHeight
+  const [boundWidth, boundHeight] =
+    aspect < 1
+      ? [preset.maxHeight, preset.maxWidth]
+      : [preset.maxWidth, preset.maxHeight]
+  const fitHeight = boundWidth / boundHeight > aspect
+  const width = evenSize(fitHeight ? boundHeight * aspect : boundWidth)
+  const height = evenSize(fitHeight ? boundHeight : boundWidth / aspect)
+  const scale = Math.min(width / workspaceWidth, height / workspaceHeight)
   return {
-    width: evenSize(workspaceWidth * scale),
-    height: evenSize(workspaceHeight * scale),
+    width,
+    height,
+    scale,
+    offsetX: (width - workspaceWidth * scale) / 2,
+    offsetY: (height - workspaceHeight * scale) / 2,
   }
 }
 
@@ -574,7 +642,9 @@ export async function exportCollageVideo({
   workspace,
   background,
   quality = DEFAULT_EXPORT_QUALITY,
+  frame = DEFAULT_EXPORT_FRAME,
   format,
+  items = [],
   reveal = null,
   length = 'short',
   onProgress,
@@ -599,14 +669,14 @@ export async function exportCollageVideo({
   }
   if (!workspace) throw new ExportError('The collage workspace is not available.')
 
-  const liveTiles = reveal ? null : measureTiles(workspace)
-  if (reveal ? reveal.items.length === 0 : liveTiles.length === 0) {
-    throw new ExportError('There is no media to export.')
-  }
-
   const { width: workspaceWidth, height: workspaceHeight } =
     workspace.getBoundingClientRect()
-  const size = exportCanvasSize(workspaceWidth, workspaceHeight, quality)
+  const workspaceSize = { width: workspaceWidth, height: workspaceHeight }
+  const collageTiles = reveal ? null : liveTiles(items, workspace, workspaceSize)
+  if (reveal ? reveal.items.length === 0 : collageTiles.length === 0) {
+    throw new ExportError('There is no media to export.')
+  }
+  const size = exportFrameLayout(workspaceWidth, workspaceHeight, frame, quality)
 
   let isDone = false
   let stopFrameClock = null
@@ -641,12 +711,7 @@ export async function exportCollageVideo({
       ? await abortable(loadImage(background.url), signal)
       : null
     const revealTiles = reveal
-      ? await loadRevealTiles(
-          reveal.items,
-          { width: workspaceWidth, height: workspaceHeight },
-          revealMedia,
-          signal,
-        )
+      ? await loadRevealTiles(reveal.items, workspaceSize, revealMedia, signal)
       : null
 
     if (audioContext && audioContext.state !== 'running') {
@@ -690,21 +755,17 @@ export async function exportCollageVideo({
 
     let startedVideos = 0
     function drawFrame() {
-      ctx.setTransform(
-        canvas.width / workspaceWidth,
-        0,
-        0,
-        canvas.height / workspaceHeight,
-        0,
-        0,
-      )
+      // The background fills the whole frame, in workspace-sized units so the
+      // default scene's clouds and bubbles keep their on-screen size.
+      ctx.setTransform(size.scale, 0, 0, size.scale, 0, 0)
       if (backgroundImage) {
-        drawCoverImage(ctx, backgroundImage, workspaceWidth, workspaceHeight)
+        drawCoverImage(ctx, backgroundImage, size.width / size.scale, size.height / size.scale)
       } else {
-        drawDefaultScene(ctx, workspaceWidth, workspaceHeight)
+        drawDefaultScene(ctx, size.width / size.scale, size.height / size.scale)
       }
+      ctx.setTransform(size.scale, 0, 0, size.scale, size.offsetX, size.offsetY)
       if (!reveal) {
-        drawTiles(ctx, liveTiles)
+        collageTiles.forEach((tile) => drawTile(ctx, tile))
         return
       }
       const count = revealCountAt(reveal.timeline, sequenceTime(), reveal.items.length)
@@ -736,7 +797,9 @@ export async function exportCollageVideo({
         }
         startedVideos = count
       }
-      drawRevealTiles(ctx, revealTiles, count)
+      for (const tile of revealTiles) {
+        if (tile.index < count) drawTile(ctx, tile)
+      }
     }
 
     drawFrame()
