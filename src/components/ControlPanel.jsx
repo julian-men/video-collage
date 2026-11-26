@@ -5,7 +5,7 @@ import {
   EXPORT_QUALITIES,
   SHORT_EXPORT_SECONDS,
   estimateExportBytes,
-} from '../utils/exportCollageVideo.js'
+} from '../utils/exportSettings.js'
 import { formatTime } from '../utils/formatTime.js'
 import RevealControls from './RevealControls.jsx'
 import RevealOrderList from './RevealOrderList.jsx'

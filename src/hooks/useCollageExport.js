@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { ExportError, exportCollageVideo } from '../utils/exportCollageVideo.js'
+import { exportCollageVideo } from '../utils/exportCollageVideo.js'
+import { ExportError } from '../utils/exportSettings.js'
 
 function useCollageExport() {
   const [isExporting, setIsExporting] = useState(false)

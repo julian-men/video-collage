@@ -20,7 +20,7 @@ import {
   EXPORT_QUALITIES,
   defaultExportFormat,
   getExportFormatSupport,
-} from './utils/exportCollageVideo.js'
+} from './utils/exportSettings.js'
 import {
   MEDIA_ACCEPT,
   SUPPORTED_MEDIA_DESCRIPTION,

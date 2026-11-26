@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { EXPORT_FRAMES, exportFrameLayout } from './exportCollageVideo.js'
+import { EXPORT_FRAMES, exportFrameLayout } from './exportSettings.js'
 
 describe('exportFrameLayout', () => {
   it('matches the workspace shape by default', () => {

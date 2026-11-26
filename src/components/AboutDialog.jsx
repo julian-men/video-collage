@@ -40,16 +40,18 @@ function AboutDialog({ onClose }) {
           all inside your browser.
         </p>
         <ul className="about-dialog__list">
-          <li>Upload videos and images, plus an optional background image.</li>
-          <li>Arrange and resize items, or randomize the whole layout.</li>
-          <li>Reveal items on a timer or in sync with a soundtrack (MP3, WAV, M4A/AAC, or OGG).</li>
-          <li>Repeat the reveal sequence for as long as the music plays.</li>
+          <li>Upload or drop videos and images, plus an optional background image.</li>
+          <li>Arrange, resize, rotate, and style items, or randomize the whole layout. Undo any change.</li>
+          <li>Reveal items in the order you choose, on a timer or in sync with a soundtrack (MP3, WAV, M4A/AAC, or OGG).</li>
+          <li>Loop the soundtrack and repeat the reveal for as long as the music plays.</li>
           <li>Present the collage fullscreen with keyboard controls.</li>
-          <li>Export five seconds or the full soundtrack as MP4 or WebM.</li>
+          <li>Export five seconds or the full soundtrack as MP4 or WebM, in your workspace’s shape, 16:9, 9:16, or 1:1.</li>
+          <li>Your collage is saved in this browser and comes back when you reopen the page.</li>
           <li>Inspired by Baby Keem and M2AF</li>
         </ul>
         <p className="about-dialog__note">
-          Your files never leave this device. Nothing is uploaded to a server.
+          Your files never leave this device. Nothing is uploaded to a server;
+          the saved collage is kept in this browser’s own storage.
         </p>
         <p className="about-dialog__credit">Made by {CREDIT_NAME}</p>
       </div>
