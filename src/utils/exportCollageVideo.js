@@ -234,6 +234,20 @@ export async function exportCollageVideo({
         drawDefaultScene(ctx, size.width / size.scale, size.height / size.scale)
       }
       ctx.setTransform(size.scale, 0, 0, size.scale, size.offsetX, size.offsetY)
+      // Like the workspace's overflow: hidden, tiles rotated past its edge
+      // are cut off there, even when the frame has room around it.
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(0, 0, workspaceWidth, workspaceHeight)
+      ctx.clip()
+      try {
+        drawTiles()
+      } finally {
+        ctx.restore()
+      }
+    }
+
+    function drawTiles() {
       if (!reveal) {
         collageTiles.forEach((tile) => drawTile(ctx, tile))
         return

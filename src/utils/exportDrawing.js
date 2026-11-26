@@ -133,8 +133,9 @@ export function drawCoverImage(ctx, image, width, height) {
   )
 }
 
-function tilePath(ctx, x, y, width, height, radius) {
-  ctx.beginPath()
+// `begin` false adds the tile to the current path instead of starting one.
+function tilePath(ctx, x, y, width, height, radius, begin = true) {
+  if (begin) ctx.beginPath()
   if (radius > 0 && typeof ctx.roundRect === 'function') {
     ctx.roundRect(x, y, width, height, radius)
   } else {
@@ -188,21 +189,32 @@ export function drawTile(ctx, tile) {
   if (style.shadow) {
     // Shadow offsets are in canvas pixels and ignore the transform, so the
     // shape is moved off-canvas by a canvas-pixel vector mapped back through it.
+    // The CSS shadow offset turns with the tile, so it's rotated too.
     const transform = ctx.getTransform()
     const inverse = transform.inverse()
     const scale = Math.hypot(transform.a, transform.b) || 1
+    const angle = (style.rotation * Math.PI) / 180
+    ctx.save()
+    // Like CSS box-shadow, nothing is drawn under the tile itself, which
+    // would show through a translucent tile.
+    const margin = width + height
+    ctx.beginPath()
+    ctx.rect(x - margin, y - margin, width + 2 * margin, height + 2 * margin)
+    tilePath(ctx, x, y, width, height, radius, false)
+    ctx.clip('evenodd')
     for (const shadow of TILE_SHADOWS) {
       ctx.save()
       ctx.translate(-SHADOW_SHIFT * inverse.a, -SHADOW_SHIFT * inverse.b)
       ctx.shadowColor = shadow.color
       ctx.shadowBlur = shadow.blur * scale
-      ctx.shadowOffsetX = SHADOW_SHIFT
-      ctx.shadowOffsetY = shadow.offsetY * scale
+      ctx.shadowOffsetX = SHADOW_SHIFT - Math.sin(angle) * shadow.offsetY * scale
+      ctx.shadowOffsetY = Math.cos(angle) * shadow.offsetY * scale
       tilePath(ctx, x, y, width, height, radius)
       ctx.fillStyle = '#000'
       ctx.fill()
       ctx.restore()
     }
+    ctx.restore()
   }
   tilePath(ctx, x, y, width, height, radius)
   ctx.clip()

@@ -15,12 +15,13 @@ function finiteOr(value, fallback, isValid = () => true) {
 /**
  * Splits the project into a small layout record and a map of file blobs by
  * id, so frequent layout saves never rewrite large media files. Items that
- * failed to load aren't saved.
+ * failed to load are kept, since the failure may be temporary; only Remove
+ * drops a file. Load errors aren't saved and are checked again on restore.
  */
 export function toRecord({ items, background, soundtrack, settings }) {
   const files = new Map()
   const savedItems = items
-    .filter((item) => !item.loadError && item.blob)
+    .filter((item) => item.blob)
     .map((item) => {
       files.set(item.id, item.blob)
       return {

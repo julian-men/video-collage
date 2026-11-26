@@ -1,11 +1,21 @@
 import { useEffect } from 'react'
 
+const NON_TEXT_INPUTS = new Set(['range', 'checkbox', 'radio', 'button', 'submit', 'reset', 'file', 'color'])
+
 function isEditableTarget(target) {
   if (!(target instanceof HTMLElement)) return false
   return (
     target.isContentEditable ||
     target.closest('input, select, textarea, [contenteditable]') !== null
   )
+}
+
+// Fields with their own text undo. Sliders, checkboxes, and selects have none,
+// so Ctrl/Cmd shortcuts still reach the app from them.
+function isTextEntryTarget(target) {
+  if (!(target instanceof HTMLElement)) return false
+  if (target.isContentEditable || target.closest('textarea, [contenteditable]')) return true
+  return target instanceof HTMLInputElement && !NON_TEXT_INPUTS.has(target.type)
 }
 
 // Lowercase KeyboardEvent.key, prefixed with `mod+` when Ctrl or Cmd is held
@@ -24,11 +34,13 @@ function useKeyboardShortcuts(shortcuts) {
     function handleKeyDown(event) {
       if (event.defaultPrevented || event.repeat) return
       if (event.altKey) return
-      if (isEditableTarget(event.target)) return
+      const name = shortcutName(event)
+      const withMod = name.startsWith('mod+')
+      if (withMod ? isTextEntryTarget(event.target) : isEditableTarget(event.target)) return
       // Space on a focused button should activate that button, not a shortcut.
       if (event.key === ' ' && event.target.closest?.('button')) return
 
-      const handler = shortcuts[shortcutName(event)]
+      const handler = shortcuts[name]
       if (!handler) return
       if (handler() !== false) event.preventDefault()
     }

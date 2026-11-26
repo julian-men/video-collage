@@ -30,6 +30,7 @@ import {
 import { isSoundtrackFile } from './utils/audioFiles.js'
 import { BEATS_PER_REVEAL_OPTIONS } from './utils/beatSync.js'
 import { toRecord } from './utils/projectRecord.js'
+import { revealCountAfterChange } from './utils/revealAfterChange.js'
 import { itemsShownBefore } from './utils/revealTimeline.js'
 import './App.css'
 
@@ -37,6 +38,22 @@ const MAX_NOTICES = 4
 
 function createNotice(fields) {
   return { id: crypto.randomUUID(), ...fields }
+}
+
+const STORAGE_PROBLEMS = {
+  unavailable: {
+    title: 'Your collage can’t be saved in this browser',
+    message: 'Browser storage isn’t available here, so changes will be lost when the page reloads.',
+  },
+  restore: {
+    title: 'Your last collage could not be restored',
+    message: 'It hasn’t been deleted. Reload the page to try again; anything you change now will replace it.',
+  },
+  save: {
+    title: 'Your collage could not be saved in this browser',
+    message:
+      'Changes will be lost when the page reloads. The browser may be out of storage space or in private mode.',
+  },
 }
 
 function createObjectUrlItem(file) {
@@ -60,7 +77,6 @@ function App() {
   })
   const { items } = media
   const [selectedId, setSelectedId] = useState(null)
-  const selectedItem = items.find((item) => item.id === selectedId) ?? null
   const [background, setBackground] = useState(null)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isAboutOpen, setIsAboutOpen] = useState(false)
@@ -96,6 +112,8 @@ function App() {
   })
   const visibleCount = sync.isActive ? sync.visibleCount : reveal.visibleCount
   const visibleItems = items.slice(0, visibleCount)
+  // Only a tile you can see can be styled.
+  const selectedItem = visibleItems.find((item) => item.id === selectedId) ?? null
   const collageExport = useCollageExport()
   // 'collage' records the tiles as shown; the reveal modes replay the sequence.
   let exportMode = 'collage'
@@ -163,23 +181,18 @@ function App() {
       loop,
     ],
   )
-  const saveWarned = useRef(false)
+  // One warning per kind of problem, so a restore failure doesn't hide a
+  // later save failure.
+  const storageWarned = useRef(new Set())
   useProjectPersistence({
     record,
     onRestore: restoreProject,
     onError: (stage) => {
-      if (saveWarned.current) return
-      saveWarned.current = true
+      if (storageWarned.current.has(stage)) return
+      storageWarned.current.add(stage)
       pushNotice({
         kind: 'warning',
-        title:
-          stage === 'restore'
-            ? 'Your last collage could not be restored'
-            : 'Your collage could not be saved in this browser',
-        message:
-          stage === 'restore'
-            ? 'Start a new one; it will be saved as you work.'
-            : 'Changes will be lost when the page reloads. The browser may be out of storage space or in private mode.',
+        ...STORAGE_PROBLEMS[stage],
       })
     },
   })
@@ -284,11 +297,21 @@ function App() {
   }
 
   // Dropped audio becomes the soundtrack; everything else goes to the collage.
+  // Any audio type goes to the soundtrack, so an unsupported one gets the
+  // soundtrack's explanation rather than the collage's.
   function handleDropFiles(files) {
-    const audio = files.filter(isSoundtrackFile)
-    const media = files.filter((file) => !isSoundtrackFile(file))
-    if (audio.length > 0) soundtrack.load(audio[0])
-    if (media.length > 0) handleAddMedia(media)
+    const isAudio = (file) => isSoundtrackFile(file) || file.type.startsWith('audio/')
+    const audioFiles = files.filter(isAudio)
+    const collageFiles = files.filter((file) => !isAudio(file))
+    if (audioFiles.length > 0) soundtrack.load(audioFiles[0])
+    if (audioFiles.length > 1) {
+      pushNotice({
+        kind: 'warning',
+        title: 'Only one soundtrack is used',
+        message: `“${audioFiles[0].name}” was used. The other audio files were not added.`,
+      })
+    }
+    if (collageFiles.length > 0) handleAddMedia(collageFiles)
   }
 
   function handleItemLoadError(id, message) {
@@ -298,9 +321,28 @@ function App() {
     noticeItemFailed(id, item.name, message)
   }
 
+  // Undo and redo can bring items back or take them away again. A timer
+  // reveal keeps showing the same items rather than shifting by one; a synced
+  // reveal is driven by the music and needs nothing.
+  function keepRevealInStep(change) {
+    if (!change || !reveal.enabled || sync.isActive) return
+    reveal.setVisibleCount(
+      revealCountAfterChange(change.before, change.after, reveal.visibleCount),
+    )
+  }
+
+  function handleUndo() {
+    keepRevealInStep(media.undo())
+  }
+
+  function handleRedo() {
+    keepRevealInStep(media.redo())
+  }
+
   function handleRemove(id) {
     const index = media.remove(id)
     if (index === -1) return
+    if (id === selectedId) setSelectedId(null)
     setNotices((current) => current.filter((notice) => notice.itemId !== id))
     reveal.handleRemoved(index)
   }
@@ -342,7 +384,13 @@ function App() {
     setBackground(next)
   }
 
+  // Clearing also deletes the saved collage and can't be undone, so it asks.
   function handleClearAll() {
+    const confirmed = window.confirm(
+      'Clear everything? This removes all media, the background, and the soundtrack, and deletes the saved collage. It can’t be undone.',
+    )
+    if (!confirmed) return
+    setSelectedId(null)
     backgroundRequest.current += 1
     if (background) revoke(background.url)
     media.clear()
@@ -434,9 +482,9 @@ function App() {
       if (items.length === 0) return false
       media.randomize()
     },
-    'mod+z': () => media.undo(),
-    'mod+shift+z': () => media.redo(),
-    'mod+y': () => media.redo(),
+    'mod+z': handleUndo,
+    'mod+shift+z': handleRedo,
+    'mod+y': handleRedo,
     '?': () => setIsHelpOpen((open) => !open),
     escape: () => {
       setIsHelpOpen(false)
@@ -495,8 +543,8 @@ function App() {
           onRandomizeLayout={media.randomize}
           canUndo={media.canUndo}
           canRedo={media.canRedo}
-          onUndo={media.undo}
-          onRedo={media.redo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
           onEnterPresentation={handleEnterPresentation}
           exportQuality={exportQuality}
           onExportQualityChange={setExportQuality}

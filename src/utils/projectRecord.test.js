@@ -22,13 +22,15 @@ const item = {
 describe('toRecord', () => {
   it('keeps layout in the record and files in a separate map', () => {
     const { meta, files } = toRecord({
-      items: [item, { ...item, id: 'broken', loadError: 'nope' }],
+      items: [item, { ...item, id: 'broken', loadError: 'nope', blob: blobA }],
       background: { id: 'bg', name: 'bg.png', url: 'blob:bg', blob: blobBg },
       soundtrack: { id: 's', name: 'song.mp3', file: blobSong, bpmInput: '120', offsetInput: '-20' },
       settings: { exportFrame: 'square' },
     })
     expect(meta.version).toBe(PROJECT_VERSION)
-    expect(meta.items).toEqual([
+    expect(meta.items).toHaveLength(2)
+    expect(meta.items[1]).not.toHaveProperty('loadError')
+    expect(meta.items.slice(0, 1)).toEqual([
       {
         id: 'a',
         name: 'a.png',
@@ -44,7 +46,7 @@ describe('toRecord', () => {
     expect(meta.background).toEqual({ id: 'bg', name: 'bg.png' })
     expect(meta.soundtrack).toEqual({ id: 's', name: 'song.mp3', bpmInput: '120', offsetInput: '-20' })
     expect(meta.settings).toEqual({ exportFrame: 'square' })
-    expect([...files.keys()]).toEqual(['a', 'bg', 's'])
+    expect([...files.keys()]).toEqual(['a', 'broken', 'bg', 's'])
     expect(files.get('a')).toBe(blobA)
   })
 })

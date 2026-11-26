@@ -97,6 +97,12 @@ function useRevealMode(totalCount, { suspended = false } = {}) {
     if (enabled && index < visibleCount) setRevealedCount(visibleCount - 1)
   }
 
+  // For changes that add or remove items elsewhere in the list (undo, redo):
+  // sets how many items are shown.
+  function setVisibleCount(count) {
+    if (enabled) setRevealedCount(Math.max(0, count))
+  }
+
   return {
     enabled,
     repeat,
@@ -115,6 +121,7 @@ function useRevealMode(totalCount, { suspended = false } = {}) {
     reset,
     restoreInitial,
     handleRemoved,
+    setVisibleCount,
   }
 }
 

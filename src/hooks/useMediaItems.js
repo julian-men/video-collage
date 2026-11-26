@@ -97,14 +97,21 @@ function useMediaItems({ onLoadFailed }) {
   }
 
   function patchEverywhere(id, patch) {
-    setState((current) => ({
+    setState((current) => {
+      // Skip unchanged facts; tiles report them again every time they remount.
+      const present = current.items.find((item) => item.id === id)
+      if (present && Object.keys(patch).every((key) => present[key] === patch[key])) {
+        return current
+      }
+      return {
       items: patchItem(current.items, id, patch),
       history: {
         ...current.history,
         past: current.history.past.map((snapshot) => patchItem(snapshot, id, patch)),
         future: current.history.future.map((snapshot) => patchItem(snapshot, id, patch)),
       },
-    }))
+      }
+    })
   }
 
   function updateFromGesture(id, patch) {
@@ -211,28 +218,25 @@ function useMediaItems({ onLoadFailed }) {
   // Slider drags on the same property of the same tile merge into one step.
   function setStyle(id, patch) {
     const tag = `style:${id}:${Object.keys(patch).join(',')}`
-    commit(
-      (current) =>
-        current.map((item) =>
-          item.id === id ? { ...item, style: normalizeStyle({ ...item.style, ...patch }) } : item,
-        ),
-      tag,
-    )
+    commit((current) => {
+      const item = current.find((candidate) => candidate.id === id)
+      if (!item) return current
+      const style = normalizeStyle({ ...item.style, ...patch })
+      const unchanged = Object.keys(style).every((key) => style[key] === item.style?.[key])
+      return unchanged ? current : patchItem(current, id, { style })
+    }, tag)
   }
 
-  function undo() {
-    setState((current) => {
-      const step = undoStep(current.history, current.items)
-      return step ? { items: step.items, history: step.history } : current
-    })
+  // Both return `{ before, after }` item lists, or null when there was
+  // nothing to do, so the caller can keep reveal mode in step.
+  function applyStep(step) {
+    if (!step) return null
+    setState({ items: step.items, history: step.history })
+    return { before: items, after: step.items }
   }
 
-  function redo() {
-    setState((current) => {
-      const step = redoStep(current.history, current.items)
-      return step ? { items: step.items, history: step.history } : current
-    })
-  }
+  const undo = () => applyStep(undoStep(history, items))
+  const redo = () => applyStep(redoStep(history, items))
 
   return {
     items,
