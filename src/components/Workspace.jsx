@@ -30,19 +30,52 @@ function Workspace({
   onItemBringToFront,
   onItemRemove,
   onItemLoadError,
+  onDropFiles,
 }) {
   const ref = useRef(null)
   const size = useElementSize(ref)
+  const [isDropTarget, setIsDropTarget] = useState(false)
+
+  function carriesFiles(event) {
+    return Array.from(event.dataTransfer?.types ?? []).includes('Files')
+  }
+
+  function handleDragOver(event) {
+    if (!carriesFiles(event)) return
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    setIsDropTarget(true)
+  }
+
+  function handleDragLeave(event) {
+    // Leaving for a child tile still counts as being over the workspace.
+    if (!event.currentTarget.contains(event.relatedTarget)) setIsDropTarget(false)
+  }
+
+  function handleDrop(event) {
+    if (!carriesFiles(event)) return
+    event.preventDefault()
+    setIsDropTarget(false)
+    const files = Array.from(event.dataTransfer.files)
+    if (files.length > 0) onDropFiles(files)
+  }
 
   const style = background
     ? { backgroundImage: `url("${background.url}")` }
     : undefined
 
   return (
-    <main className="workspace" style={style} ref={ref}>
+    <main
+      className={`workspace${isDropTarget ? ' workspace--drop' : ''}`}
+      style={style}
+      ref={ref}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {showPlaceholder && (
         <p className="workspace__empty">
-          Upload videos or images from the panel to start your collage.
+          Upload or drop videos, images, or a soundtrack here to start your collage.
         </p>
       )}
       {size.width > 0 &&

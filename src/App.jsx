@@ -23,6 +23,7 @@ import {
   validateBackgroundFile,
   validateMediaFile,
 } from './utils/mediaFiles.js'
+import { isSoundtrackFile } from './utils/audioFiles.js'
 import { itemsShownBefore } from './utils/revealTimeline.js'
 import './App.css'
 
@@ -233,6 +234,14 @@ function App() {
     newItems.forEach(startProbe)
   }
 
+  // Dropped audio becomes the soundtrack; everything else goes to the collage.
+  function handleDropFiles(files) {
+    const audio = files.filter(isSoundtrackFile)
+    const media = files.filter((file) => !isSoundtrackFile(file))
+    if (audio.length > 0) soundtrack.load(audio[0])
+    if (media.length > 0) handleAddMedia(media)
+  }
+
   function handleItemLoadError(id, message) {
     const item = items.find((candidate) => candidate.id === id)
     if (item) markItemFailed(id, item.name, message)
@@ -434,6 +443,7 @@ function App() {
         onItemBringToFront={handleBringToFront}
         onItemRemove={handleRemove}
         onItemLoadError={handleItemLoadError}
+        onDropFiles={handleDropFiles}
       />
       {presentation.isPresenting ? (
         <button

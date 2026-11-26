@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { decodeAudioFile, validateSoundtrackFile } from '../utils/audioFiles.js'
+import {
+  SOUNDTRACK_FORMATS_LABEL,
+  decodeAudioFile,
+  validateSoundtrackFile,
+} from '../utils/audioFiles.js'
 import { parseBpm } from '../utils/beatSync.js'
 import { LOW_CONFIDENCE } from '../utils/tempoAnalysis.js'
 
@@ -117,7 +121,7 @@ function useSoundtrack(onProblem) {
         report({
           kind: 'error',
           title: `Soundtrack “${name}” couldn't be played`,
-          message: 'This browser could not play the audio. Try a different MP3 file.',
+          message: 'This browser could not play the audio. Try a different audio file.',
         })
       },
       options,
@@ -197,7 +201,7 @@ function useSoundtrack(onProblem) {
       report({
         kind: 'warning',
         title: `“${file.name}” can't be used as a soundtrack`,
-        message: `It was not added because ${problem}. Choose an MP3 file.`,
+        message: `It was not added because ${problem}. Choose an ${SOUNDTRACK_FORMATS_LABEL} file.`,
       })
       return false
     }

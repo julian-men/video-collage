@@ -69,6 +69,11 @@
   opacity: 0;
 }
 
+.workspace--drop {
+  outline: 4px dashed rgba(255, 255, 255, 0.9);
+  outline-offset: -12px;
+}
+
 @keyframes cloud-drift {
   from {
     transform: translateX(-3%);

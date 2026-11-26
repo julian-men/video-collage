@@ -29,7 +29,7 @@ function SoundtrackControls({ soundtrack, onLoad, onRemove, onPlay, onPause, onS
   return (
     <fieldset className="reveal-controls soundtrack-controls">
       <label className="control-panel__field">
-        <span>Soundtrack (MP3)</span>
+        <span>Soundtrack</span>
         <input type="file" accept={SOUNDTRACK_ACCEPT} onChange={handleFileChange} />
       </label>
 

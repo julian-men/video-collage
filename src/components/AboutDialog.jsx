@@ -42,7 +42,7 @@ function AboutDialog({ onClose }) {
         <ul className="about-dialog__list">
           <li>Upload videos and images, plus an optional background image.</li>
           <li>Arrange and resize items, or randomize the whole layout.</li>
-          <li>Reveal items on a timer or in sync with an MP3 soundtrack.</li>
+          <li>Reveal items on a timer or in sync with a soundtrack (MP3, WAV, M4A/AAC, or OGG).</li>
           <li>Repeat the reveal sequence for as long as the music plays.</li>
           <li>Present the collage fullscreen with keyboard controls.</li>
           <li>Export five seconds or the full soundtrack as MP4 or WebM.</li>
